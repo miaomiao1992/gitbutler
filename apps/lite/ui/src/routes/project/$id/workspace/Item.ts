@@ -116,6 +116,6 @@ export const itemIdentityKey = (item: Item): string =>
 	);
 
 /**
- * Determine `Item` equivalence with respect to the user interface. See also `itemIdentityKey`.
+ * Determine {@link Item} equivalence with respect to the user interface. See also {@link itemIdentityKey}.
  */
 export const itemEquals = (a: Item, b: Item): boolean => itemIdentityKey(a) === itemIdentityKey(b);
