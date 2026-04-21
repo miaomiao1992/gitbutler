@@ -2,6 +2,7 @@ import { Match } from "effect";
 import { type FileParent } from "#ui/domain/FileParent.ts";
 import { type HunkHeader, TreeChange } from "@gitbutler/but-sdk";
 
+/** @public */
 export type ChangesSectionItem = {
 	treeChanges: Array<TreeChange>;
 };
@@ -20,8 +21,10 @@ export type StackItem = {
 export type BranchItem = StackItem & {
 	branchRef: Array<number>;
 };
+
 /** @public */
 export type CommitItem = StackItem & { commitId: string };
+
 /** @public */
 export type CommitFileItem = CommitItem & {
 	treeChange: TreeChange;
