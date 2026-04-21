@@ -791,7 +791,7 @@ export const useWorkspaceShortcuts = ({
 		const changes = Match.value(selectedItem).pipe(
 			Match.tag("ChangeFile", (item) => [item.treeChange]),
 			Match.tag("ChangesSection", (item) => item.treeChanges),
-			Match.when({ _tag: "Hunk", parent: { _tag: "Change" } }, (item) => [item.treeChange.change]),
+			Match.when({ _tag: "Hunk", parent: { _tag: "Change" } }, (item) => [item.treeChange]),
 			Match.orElse(() => null),
 		);
 

@@ -415,7 +415,8 @@ const Hunk: FC<{
 				? (() => {
 						const source = hunkItem({
 							parent: fileParent,
-							treeChange: { change, hunkHeaders: [hunk] },
+							treeChange: change,
+							hunkHeader: hunk,
 						});
 						return (
 							<OperationSourceC

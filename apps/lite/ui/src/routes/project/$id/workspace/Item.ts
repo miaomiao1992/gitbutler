@@ -2,11 +2,6 @@ import { Match } from "effect";
 import { type FileParent } from "#ui/domain/FileParent.ts";
 import { type HunkHeader, TreeChange } from "@gitbutler/but-sdk";
 
-type TreeChangeWithHunkHeaders = {
-	change: TreeChange;
-	hunkHeaders: Array<HunkHeader>;
-};
-
 export type ChangesSectionItem = {
 	treeChanges: Array<TreeChange>;
 };
@@ -35,7 +30,8 @@ export type CommitFileItem = CommitItem & {
 /** @public */
 export type HunkItem = {
 	parent: FileParent;
-	treeChange: TreeChangeWithHunkHeaders;
+	treeChange: TreeChange;
+	hunkHeader: HunkHeader;
 };
 
 /**
@@ -92,10 +88,11 @@ export const commitFileItem = ({ stackId, commitId, treeChange }: CommitFileItem
 });
 
 /** @public */
-export const hunkItem = ({ parent, treeChange }: HunkItem): Item => ({
+export const hunkItem = ({ parent, treeChange, hunkHeader }: HunkItem): Item => ({
 	_tag: "Hunk",
 	parent,
 	treeChange,
+	hunkHeader,
 });
 
 /** @public */
@@ -117,7 +114,7 @@ export const itemIdentityKey = (item: Item): string =>
 			CommitFile: (item) =>
 				JSON.stringify(["CommitFile", item.stackId, item.commitId, item.treeChange]),
 			BaseCommit: () => JSON.stringify(["BaseCommit"]),
-			Hunk: (item) => JSON.stringify(["Hunk", item.parent, item.treeChange]),
+			Hunk: (item) => JSON.stringify(["Hunk", item.parent, item.treeChange, item.hunkHeader]),
 		}),
 	);
 

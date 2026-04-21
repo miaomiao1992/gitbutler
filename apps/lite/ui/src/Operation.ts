@@ -379,7 +379,7 @@ export const rubOperation = ({
 			({ source, target }) =>
 				commitAmendOperation({
 					commitId: target.commitId,
-					changes: [createDiffSpec(source.treeChange.change, source.treeChange.hunkHeaders)],
+					changes: [createDiffSpec(source.treeChange, [source.hunkHeader])],
 					dryRun: false,
 				}),
 		),
@@ -405,7 +405,7 @@ export const rubOperation = ({
 				commitUncommitChangesOperation({
 					commitId: source.parent.commitId,
 					assignTo: null,
-					changes: [createDiffSpec(source.treeChange.change, source.treeChange.hunkHeaders)],
+					changes: [createDiffSpec(source.treeChange, [source.hunkHeader])],
 					dryRun: false,
 				}),
 		),
@@ -431,7 +431,7 @@ export const rubOperation = ({
 				commitMoveChangesBetweenOperation({
 					sourceCommitId: source.parent.commitId,
 					destinationCommitId: target.commitId,
-					changes: [createDiffSpec(source.treeChange.change, source.treeChange.hunkHeaders)],
+					changes: [createDiffSpec(source.treeChange, [source.hunkHeader])],
 					dryRun: false,
 				}),
 		),
@@ -512,7 +512,7 @@ export const moveOperation = ({
 			commitCreateOperation({
 				relativeTo,
 				side,
-				changes: [createDiffSpec(source.treeChange.change, source.treeChange.hunkHeaders)],
+				changes: [createDiffSpec(source.treeChange, [source.hunkHeader])],
 				message: "",
 				dryRun: false,
 			}),
@@ -531,7 +531,7 @@ export const moveOperation = ({
 				sourceCommitId: source.parent.commitId,
 				relativeTo,
 				side,
-				changes: [createDiffSpec(source.treeChange.change, source.treeChange.hunkHeaders)],
+				changes: [createDiffSpec(source.treeChange, [source.hunkHeader])],
 				dryRun: false,
 			}),
 		),

@@ -29,9 +29,6 @@ export const OperationSourceLabel: FC<{
 			},
 			CommitFile: ({ treeChange }) => treeChange.path,
 			Stack: () => "Stack",
-			Hunk: ({ treeChange }) =>
-				treeChange.hunkHeaders
-					.map((hunkHeader) => `Hunk ${formatHunkHeader(hunkHeader)}`)
-					.join(", "),
+			Hunk: ({ hunkHeader }) => `Hunk ${formatHunkHeader(hunkHeader)}`,
 		}),
 	);
