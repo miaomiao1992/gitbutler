@@ -24,7 +24,6 @@ import {
 	stackItem,
 } from "./Item.ts";
 import { operationModeToOperation } from "./OperationMode.tsx";
-import { resolveOperationSource } from "./ResolvedOperationSource.ts";
 import {
 	getAdjacent,
 	getNextSection,
@@ -789,15 +788,19 @@ export const useWorkspaceShortcuts = ({
 		);
 
 	const requestAbsorptionPlanForItem = (selectedItem: Item) => {
-		const resolvedOperationSource = resolveOperationSource(selectedItem);
+		const changes = Match.value(selectedItem).pipe(
+			Match.tag("ChangeFile", (item) => [item.treeChange]),
+			Match.tag("ChangesSection", (item) => item.treeChanges),
+			Match.when({ _tag: "Hunk", parent: { _tag: "Change" } }, (item) => [item.treeChange.change]),
+			Match.orElse(() => null),
+		);
 
-		if (resolvedOperationSource._tag !== "TreeChanges") return;
-		if (resolvedOperationSource.parent._tag !== "Change") return;
+		if (!changes) return;
 
 		requestAbsorptionPlan({
 			type: "treeChanges",
 			subject: {
-				changes: resolvedOperationSource.changes.map(({ change }) => change),
+				changes,
 				assignedStackId: null,
 			},
 		});
@@ -918,11 +921,8 @@ export const useWorkspaceShortcuts = ({
 
 		if (!selectedItem) return;
 
-		const resolvedOperationSource = resolveOperationSource(operationMode.source);
-
 		const operation = operationModeToOperation({
 			operationMode,
-			resolvedOperationSource,
 			target: selectedItem,
 		});
 
