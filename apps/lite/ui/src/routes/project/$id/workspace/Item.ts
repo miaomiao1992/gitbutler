@@ -33,7 +33,7 @@ export type CommitFileItem = CommitItem & {
 };
 
 /** @public */
-export type HunkOperationSource = {
+export type HunkItem = {
 	parent: FileParent;
 	treeChange: TreeChangeWithHunkHeaders;
 };
@@ -49,7 +49,7 @@ export type Item =
 	| ({ _tag: "Commit" } & CommitItem)
 	| ({ _tag: "CommitFile" } & CommitFileItem)
 	| { _tag: "BaseCommit" }
-	| ({ _tag: "Hunk" } & HunkOperationSource);
+	| ({ _tag: "Hunk" } & HunkItem);
 
 /** @public */
 export const changesSectionItem = ({ treeChanges }: ChangesSectionItem): Item => ({
@@ -92,7 +92,7 @@ export const commitFileItem = ({ stackId, commitId, treeChange }: CommitFileItem
 });
 
 /** @public */
-export const hunkItem = ({ parent, treeChange }: HunkOperationSource): Item => ({
+export const hunkItem = ({ parent, treeChange }: HunkItem): Item => ({
 	_tag: "Hunk",
 	parent,
 	treeChange,
