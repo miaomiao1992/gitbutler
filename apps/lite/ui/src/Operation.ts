@@ -470,16 +470,11 @@ export const moveOperationSourceToOperation = ({
 					dryRun: false,
 				}),
 		),
-		Match.when(
-			{
-				source: { _tag: "Branch" },
-				target: { _tag: "BaseCommit" },
-			},
-			({ source }) =>
-				tearOffBranchOperation({
-					subjectBranch: decodeRefName(source.branchRef),
-					dryRun: false,
-				}),
+		Match.when({ source: { _tag: "Branch" }, target: { _tag: "BaseCommit" } }, ({ source }) =>
+			tearOffBranchOperation({
+				subjectBranch: decodeRefName(source.branchRef),
+				dryRun: false,
+			}),
 		),
 		Match.whenOr(
 			{ source: { _tag: "Commit" }, relativeTo: Match.defined },
@@ -492,10 +487,7 @@ export const moveOperationSourceToOperation = ({
 				}),
 		),
 		Match.when(
-			{
-				source: { _tag: "ChangeFile" },
-				relativeTo: Match.defined,
-			},
+			{ source: { _tag: "ChangeFile" }, relativeTo: Match.defined },
 			({ source, relativeTo }) =>
 				commitCreateOperation({
 					relativeTo,
@@ -506,10 +498,7 @@ export const moveOperationSourceToOperation = ({
 				}),
 		),
 		Match.when(
-			{
-				source: { _tag: "ChangesSection" },
-				relativeTo: Match.defined,
-			},
+			{ source: { _tag: "ChangesSection" }, relativeTo: Match.defined },
 			({ source, relativeTo }) =>
 				commitCreateOperation({
 					relativeTo,
@@ -520,10 +509,7 @@ export const moveOperationSourceToOperation = ({
 				}),
 		),
 		Match.when(
-			{
-				source: { _tag: "Hunk", parent: { _tag: "Change" } },
-				relativeTo: Match.defined,
-			},
+			{ source: { _tag: "Hunk", parent: { _tag: "Change" } }, relativeTo: Match.defined },
 			({ source, relativeTo }) =>
 				commitCreateOperation({
 					relativeTo,
@@ -534,10 +520,7 @@ export const moveOperationSourceToOperation = ({
 				}),
 		),
 		Match.when(
-			{
-				source: { _tag: "CommitFile" },
-				relativeTo: Match.defined,
-			},
+			{ source: { _tag: "CommitFile" }, relativeTo: Match.defined },
 			({ source, relativeTo }) =>
 				commitCreateFromCommittedChangesOperation({
 					sourceCommitId: source.commitId,
@@ -548,10 +531,7 @@ export const moveOperationSourceToOperation = ({
 				}),
 		),
 		Match.when(
-			{
-				source: { _tag: "Hunk", parent: { _tag: "Commit" } },
-				relativeTo: Match.defined,
-			},
+			{ source: { _tag: "Hunk", parent: { _tag: "Commit" } }, relativeTo: Match.defined },
 			({ source, relativeTo }) =>
 				commitCreateFromCommittedChangesOperation({
 					sourceCommitId: source.parent.commitId,
