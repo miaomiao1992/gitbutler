@@ -1,8 +1,4 @@
-import {
-	moveOperationSourceToOperation,
-	rubOperationSourceToOperation,
-	type Operation,
-} from "#ui/Operation.ts";
+import { moveOperation, rubOperation, type Operation } from "#ui/Operation.ts";
 import { Match } from "effect";
 import { itemEquals, type Item } from "./Item.ts";
 import { type OperationMode } from "./WorkspaceMode.ts";
@@ -16,9 +12,8 @@ export const operationModeToOperation = ({
 }): Operation | null =>
 	Match.value(operationMode).pipe(
 		Match.tagsExhaustive({
-			Rub: () => rubOperationSourceToOperation({ source: operationMode.source, target }),
-			Move: () =>
-				moveOperationSourceToOperation({ source: operationMode.source, target, side: "below" }),
+			Rub: () => rubOperation({ source: operationMode.source, target }),
+			Move: () => moveOperation({ source: operationMode.source, target, side: "below" }),
 		}),
 	);
 
