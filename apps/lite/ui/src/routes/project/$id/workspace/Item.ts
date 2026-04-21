@@ -34,9 +34,6 @@ export type HunkItem = {
 	hunkHeader: HunkHeader;
 };
 
-/**
- * A selectable item in the primary panel.
- */
 export type Item =
 	| ({ _tag: "ChangesSection" } & ChangesSectionItem)
 	| ({ _tag: "ChangeFile" } & ChangeItem)
