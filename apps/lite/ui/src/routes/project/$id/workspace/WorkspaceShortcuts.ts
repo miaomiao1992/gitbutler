@@ -12,12 +12,10 @@ import {
 	branchItem,
 	baseCommitItem,
 	commitItem,
-	fileItem,
 	itemEquals,
 	type BranchItem,
 	changesSectionItem,
 	type CommitItem,
-	type FileItem,
 	type Item,
 	StackItem,
 	stackItem,
@@ -219,10 +217,6 @@ const commitDefaultBindings: Array<ShortcutBinding<CommitAction>> = [
 	},
 ];
 
-type CommitFileAction = PrimaryPanelAction;
-
-const commitFilesBindings: Array<ShortcutBinding<CommitFileAction>> = [...primaryPanelBindings];
-
 type BranchAction = PrimaryPanelAction | { _tag: "RenameBranch" };
 
 const renameBranchAction: BranchAction = { _tag: "RenameBranch" };
@@ -245,20 +239,12 @@ type BranchDefaultModeScope = {
 	bindings: Array<ShortcutBinding<BranchAction>>;
 	context: BranchItem;
 };
-type ChangesFileDefaultModeScope = {
-	bindings: Array<ShortcutBinding<ChangesAction>>;
-	context: FileItem;
-};
 type ChangesSectionDefaultModeScope = {
 	bindings: Array<ShortcutBinding<ChangesAction>>;
 };
 type CommitDefaultModeScope = {
 	bindings: Array<ShortcutBinding<CommitAction>>;
 	context: CommitItem;
-};
-type CommitFileDefaultModeScope = {
-	bindings: Array<ShortcutBinding<CommitFileAction>>;
-	context: FileItem;
 };
 
 type StackDefaultModeScope = {
@@ -269,10 +255,8 @@ type StackDefaultModeScope = {
 type DefaultModeScope =
 	| ({ _tag: "BaseCommit" } & BaseCommitDefaultModeScope)
 	| ({ _tag: "Branch" } & BranchDefaultModeScope)
-	| ({ _tag: "ChangesFile" } & ChangesFileDefaultModeScope)
 	| ({ _tag: "ChangesSection" } & ChangesSectionDefaultModeScope)
 	| ({ _tag: "Commit" } & CommitDefaultModeScope)
-	| ({ _tag: "CommitFile" } & CommitFileDefaultModeScope)
 	| ({ _tag: "Stack" } & StackDefaultModeScope);
 
 const baseCommitDefaultModeScope = ({
@@ -287,15 +271,6 @@ const branchDefaultModeScope = ({
 	context,
 }: BranchDefaultModeScope): DefaultModeScope => ({
 	_tag: "Branch",
-	bindings,
-	context,
-});
-
-const changesFileDefaultModeScope = ({
-	bindings,
-	context,
-}: ChangesFileDefaultModeScope): DefaultModeScope => ({
-	_tag: "ChangesFile",
 	bindings,
 	context,
 });
@@ -316,15 +291,6 @@ const commitDefaultModeScope = ({
 	context,
 });
 
-const commitFileDefaultModeScope = ({
-	bindings,
-	context,
-}: CommitFileDefaultModeScope): DefaultModeScope => ({
-	_tag: "CommitFile",
-	bindings,
-	context,
-});
-
 const stackDefaultModeScope = ({ bindings, context }: StackDefaultModeScope): DefaultModeScope => ({
 	_tag: "Stack",
 	bindings,
@@ -338,22 +304,6 @@ const getDefaultModeScope = (selectedItem: Item): DefaultModeScope | null =>
 				baseCommitDefaultModeScope({
 					bindings: primaryPanelBindings,
 				}),
-			File: (selectedItem) =>
-				Match.value(selectedItem.parent).pipe(
-					Match.tagsExhaustive({
-						Changes: () =>
-							changesFileDefaultModeScope({
-								bindings: changesBindings,
-								context: selectedItem,
-							}),
-						Commit: () =>
-							commitFileDefaultModeScope({
-								bindings: commitFilesBindings,
-								context: selectedItem,
-							}),
-						Branch: () => null,
-					}),
-				),
 			ChangesSection: () =>
 				changesSectionDefaultModeScope({
 					bindings: changesBindings,
@@ -373,6 +323,7 @@ const getDefaultModeScope = (selectedItem: Item): DefaultModeScope | null =>
 					bindings: branchBindings,
 					context: selectedItem,
 				}),
+			File: () => null,
 			Hunk: () => null,
 		}),
 	);
@@ -382,10 +333,8 @@ const getDefaultModeScopeLabel = (scope: DefaultModeScope): string =>
 		Match.tagsExhaustive({
 			BaseCommit: () => "Base commit",
 			Branch: () => "Branch",
-			ChangesFile: () => "Change",
 			ChangesSection: () => "Changes",
 			Commit: () => "Commit",
-			CommitFile: () => "Commit file",
 			Stack: () => "Stack",
 		}),
 	);
@@ -853,12 +802,6 @@ export const useWorkspaceShortcuts = ({
 					event.preventDefault();
 					handleBranchScopeAction(action, scope.context);
 				},
-				ChangesFile: (scope) => {
-					const action = getAction(scope.bindings, event);
-					if (!action) return;
-					event.preventDefault();
-					handleChangesScopeAction(action, fileItem(scope.context));
-				},
 				ChangesSection: (scope) => {
 					const action = getAction(scope.bindings, event);
 					if (!action) return;
@@ -870,12 +813,6 @@ export const useWorkspaceShortcuts = ({
 					if (!action) return;
 					event.preventDefault();
 					handleCommitScopeAction(action, scope.context);
-				},
-				CommitFile: (scope) => {
-					const action = getAction(scope.bindings, event);
-					if (!action) return;
-					event.preventDefault();
-					handlePrimaryPanelAction(action, fileItem(scope.context));
 				},
 				Stack: (scope) => {
 					const action = getAction(scope.bindings, event);
