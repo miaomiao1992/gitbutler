@@ -204,25 +204,12 @@ const changesBindings: Array<ShortcutBinding<ChangesAction>> = [
 	},
 ];
 
-type CommitToggleFilesAction = { _tag: "ToggleFiles" };
-
-const toggleCommitFilesAction: CommitToggleFilesAction = { _tag: "ToggleFiles" };
-
-const toggleCommitFilesBinding: ShortcutBinding<CommitToggleFilesAction> = {
-	id: "commit-toggle-files",
-	description: "Files",
-	keys: ["f"],
-	action: toggleCommitFilesAction,
-	repeat: false,
-};
-
-type CommitAction = PrimaryPanelAction | CommitToggleFilesAction | { _tag: "EditMessage" };
+type CommitAction = PrimaryPanelAction | { _tag: "EditMessage" };
 
 const editMessageAction: CommitAction = { _tag: "EditMessage" };
 
 const commitDefaultBindings: Array<ShortcutBinding<CommitAction>> = [
 	...primaryPanelBindings,
-	toggleCommitFilesBinding,
 	{
 		id: "commit-reword",
 		description: "Reword",
@@ -232,21 +219,9 @@ const commitDefaultBindings: Array<ShortcutBinding<CommitAction>> = [
 	},
 ];
 
-type CommitFileAction = PrimaryPanelAction | CommitToggleFilesAction | { _tag: "CloseFiles" };
+type CommitFileAction = PrimaryPanelAction;
 
-const closeFilesAction: CommitFileAction = { _tag: "CloseFiles" };
-
-const commitFilesBindings: Array<ShortcutBinding<CommitFileAction>> = [
-	...primaryPanelBindings,
-	toggleCommitFilesBinding,
-	{
-		id: "commit-file-close",
-		description: "Close",
-		keys: ["Escape"],
-		action: closeFilesAction,
-		repeat: false,
-	},
-];
+const commitFilesBindings: Array<ShortcutBinding<CommitFileAction>> = [...primaryPanelBindings];
 
 type BranchAction = PrimaryPanelAction | { _tag: "RenameBranch" };
 
@@ -845,27 +820,8 @@ export const useWorkspaceShortcuts = ({
 							item: selectedItem,
 						}),
 					),
-				ToggleFiles: () =>
-					dispatch(projectActions.toggleCommitFiles({ projectId, item: selectedItem })),
 			}),
 			Match.orElse((action) => handlePrimaryPanelAction(action, commitItem(selectedItem))),
-		);
-
-	const handleCommitFileScopeAction = (action: CommitFileAction, selectedItem: FileItem) =>
-		Match.value(action).pipe(
-			Match.tags({
-				CloseFiles: () => dispatch(projectActions.closeCommitFiles({ projectId })),
-				ToggleFiles: () => {
-					if (selectedItem.parent._tag !== "Commit") return;
-					dispatch(
-						projectActions.toggleCommitFiles({
-							projectId,
-							item: selectedItem.parent,
-						}),
-					);
-				},
-			}),
-			Match.orElse((action) => handlePrimaryPanelAction(action, fileItem(selectedItem))),
 		);
 
 	const handleBranchScopeAction = (action: BranchAction, selectedItem: BranchItem) =>
@@ -919,7 +875,7 @@ export const useWorkspaceShortcuts = ({
 					const action = getAction(scope.bindings, event);
 					if (!action) return;
 					event.preventDefault();
-					handleCommitFileScopeAction(action, scope.context);
+					handlePrimaryPanelAction(action, fileItem(scope.context));
 				},
 				Stack: (scope) => {
 					const action = getAction(scope.bindings, event);

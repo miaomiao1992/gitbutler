@@ -65,26 +65,3 @@ export const PushIcon: FC = () => (
 		/>
 	</svg>
 );
-
-export const ExpandCollapseIcon: FC<{
-	isExpanded: boolean;
-}> = ({ isExpanded }) => (
-	<svg aria-hidden="true" width="16" height="16" viewBox="0 0 16 16">
-		<path
-			d="M4 8h8"
-			stroke="currentColor"
-			strokeWidth="1.5"
-			strokeLinecap="round"
-			strokeLinejoin="round"
-		/>
-		{!isExpanded && (
-			<path
-				d="M8 4v8"
-				stroke="currentColor"
-				strokeWidth="1.5"
-				strokeLinecap="round"
-				strokeLinejoin="round"
-			/>
-		)}
-	</svg>
-);

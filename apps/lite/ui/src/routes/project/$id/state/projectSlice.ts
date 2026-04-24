@@ -56,21 +56,6 @@ const projectSlice = createSlice({
 			const projectState = ensureProjectState(state, projectId);
 			workspace.startRenameBranch(projectState.workspace, item);
 		},
-		openCommitFiles: (state, action: PayloadAction<{ projectId: string; item: CommitItem }>) => {
-			const { projectId, item } = action.payload;
-			const projectState = ensureProjectState(state, projectId);
-			workspace.openCommitFiles(projectState.workspace, item);
-		},
-		closeCommitFiles: (state, action: PayloadAction<{ projectId: string }>) => {
-			const { projectId } = action.payload;
-			const projectState = ensureProjectState(state, projectId);
-			workspace.closeCommitFiles(projectState.workspace);
-		},
-		toggleCommitFiles: (state, action: PayloadAction<{ projectId: string; item: CommitItem }>) => {
-			const { projectId, item } = action.payload;
-			const projectState = ensureProjectState(state, projectId);
-			workspace.toggleCommitFiles(projectState.workspace, item);
-		},
 		enterRubMode: (state, action: PayloadAction<{ projectId: string; source: Item }>) => {
 			const { projectId, source } = action.payload;
 			const projectState = ensureProjectState(state, projectId);
@@ -105,13 +90,6 @@ const projectSlice = createSlice({
 		},
 		exitMode: (state, action: PayloadAction<{ projectId: string }>) => {
 			workspace.exitMode(ensureProjectState(state, action.payload.projectId).workspace);
-		},
-		setExpandedCommitId: (
-			state,
-			action: PayloadAction<{ projectId: string; commitId: string | null }>,
-		) => {
-			const { projectId, commitId } = action.payload;
-			workspace.setExpandedCommitId(ensureProjectState(state, projectId).workspace, commitId);
 		},
 		setHighlightedCommitIds: (
 			state,
@@ -161,9 +139,6 @@ export const selectProjectWorkspaceModeState = (state: RootState, projectId: str
 
 export const selectProjectOperationModeState = (state: RootState, projectId: string) =>
 	workspace.selectOperationMode(selectProjectWorkspaceState(state, projectId));
-
-export const selectProjectExpandedCommitId = (state: RootState, projectId: string) =>
-	workspace.selectExpandedCommitId(selectProjectWorkspaceState(state, projectId));
 
 export const selectProjectHighlightedCommitIds = (state: RootState, projectId: string) =>
 	workspace.selectHighlightedCommitIds(selectProjectWorkspaceState(state, projectId));

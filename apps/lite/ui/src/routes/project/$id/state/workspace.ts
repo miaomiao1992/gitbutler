@@ -30,24 +30,18 @@ const createInitialWorkspaceSelectionState = (): WorkspaceSelectionState => ({
 });
 
 export type WorkspaceState = {
-	expandedCommitId: string | null;
 	highlightedCommitIds: Array<string>;
 	mode: WorkspaceMode;
 	selection: WorkspaceSelectionState;
 };
 
 export const createInitialState = (): WorkspaceState => ({
-	expandedCommitId: null,
 	highlightedCommitIds: [],
 	mode: defaultWorkspaceMode,
 	selection: createInitialWorkspaceSelectionState(),
 });
 
 export const initialState: WorkspaceState = createInitialState();
-
-export const closeCommitFiles = (state: WorkspaceState) => {
-	state.expandedCommitId = null;
-};
 
 export const enterMoveMode = (state: WorkspaceState, source: Item) => {
 	state.mode = operationWorkspaceMode(moveOperationMode({ source }));
@@ -88,18 +82,10 @@ export const exitMode = (state: WorkspaceState) => {
 	state.mode = defaultWorkspaceMode;
 };
 
-export const openCommitFiles = (state: WorkspaceState, item: CommitItem) => {
-	state.expandedCommitId = item.commitId;
-};
-
 export const selectItem = (state: WorkspaceState, item: Item) => {
 	state.selection.item = item;
 	if (!isValidWorkspaceModeForSelectedItem({ mode: state.mode, selectedItem: item }))
 		state.mode = defaultWorkspaceMode;
-};
-
-export const setExpandedCommitId = (state: WorkspaceState, commitId: string | null) => {
-	state.expandedCommitId = commitId;
 };
 
 export const setHighlightedCommitIds = (state: WorkspaceState, commitIds: Array<string> | null) => {
@@ -122,15 +108,6 @@ export const startRewordCommit = (state: WorkspaceState, item: CommitItem) => {
 	});
 };
 
-export const toggleCommitFiles = (state: WorkspaceState, item: CommitItem) => {
-	if (state.expandedCommitId === item.commitId) {
-		closeCommitFiles(state);
-		return;
-	}
-
-	openCommitFiles(state, item);
-};
-
 const selectSelection = (state: WorkspaceState): WorkspaceSelectionState => state.selection;
 
 export const selectSelectedItem = (state: WorkspaceState): Item => selectSelection(state).item;
@@ -138,9 +115,6 @@ export const selectSelectedItem = (state: WorkspaceState): Item => selectSelecti
 export const selectMode = (state: WorkspaceState): WorkspaceMode => state.mode;
 
 export const selectOperationMode = (state: WorkspaceState) => getOperationMode(state.mode);
-
-export const selectExpandedCommitId = (state: WorkspaceState): string | null =>
-	state.expandedCommitId;
 
 export const selectHighlightedCommitIds = (state: WorkspaceState): Array<string> =>
 	state.highlightedCommitIds;

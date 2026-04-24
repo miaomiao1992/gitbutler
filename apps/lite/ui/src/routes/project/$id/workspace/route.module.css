@@ -102,10 +102,6 @@
 	font-weight: bold;
 }
 
-.fileRow {
-	padding-left: 8px;
-}
-
 .hunkHeaderRow {
 	display: flex;
 	column-gap: 4px;

@@ -1,10 +1,6 @@
-import {
-	changesInWorktreeQueryOptions,
-	commitDetailsWithLineStatsQueryOptions,
-	headInfoQueryOptions,
-} from "#ui/api/queries.ts";
+import { changesInWorktreeQueryOptions, headInfoQueryOptions } from "#ui/api/queries.ts";
 import { CommitDetails, Segment, type RefInfo, type TreeChange } from "@gitbutler/but-sdk";
-import { useQueries, useSuspenseQuery } from "@tanstack/react-query";
+import { useSuspenseQuery } from "@tanstack/react-query";
 import { type NonEmptyArray } from "effect/Array";
 import { changesFileParent, commitFileParent } from "#ui/domain/FileParent.ts";
 import {
@@ -95,25 +91,13 @@ const buildWorkspaceOutline = ({
 	];
 };
 
-export const useWorkspaceOutline = ({
-	projectId,
-	expandedCommitId,
-}: {
-	projectId: string;
-	expandedCommitId: string | null;
-}) => {
+export const useWorkspaceOutline = ({ projectId }: { projectId: string }) => {
 	const { data: headInfo } = useSuspenseQuery(headInfoQueryOptions(projectId));
 	const { data: worktreeChanges } = useSuspenseQuery(changesInWorktreeQueryOptions(projectId));
-	const commitDetailsQueries = useQueries({
-		queries: (expandedCommitId !== null ? [expandedCommitId] : []).map((commitId) =>
-			commitDetailsWithLineStatsQueryOptions({ projectId, commitId }),
-		),
-	});
 
 	return buildWorkspaceOutline({
 		headInfo,
 		changes: worktreeChanges.changes,
-		expandedCommitDetails: commitDetailsQueries[0]?.data,
 	});
 };
 

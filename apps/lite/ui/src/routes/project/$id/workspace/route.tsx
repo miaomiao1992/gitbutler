@@ -17,7 +17,7 @@ import {
 	treeChangeDiffsQueryOptions,
 } from "#ui/api/queries.ts";
 import { classes } from "#ui/classes.ts";
-import { DependencyIcon, ExpandCollapseIcon, MenuTriggerIcon, PushIcon } from "#ui/icons.tsx";
+import { DependencyIcon, MenuTriggerIcon, PushIcon } from "#ui/icons.tsx";
 import {
 	branchFileParent,
 	changesFileParent,
@@ -32,7 +32,6 @@ import {
 } from "#ui/routes/project/$id/ProjectPreviewLayout.tsx";
 import {
 	projectActions,
-	selectProjectExpandedCommitId,
 	selectProjectHighlightedCommitIds,
 	selectProjectOperationModeState,
 	selectProjectSelectedItem,
@@ -84,7 +83,6 @@ import {
 	ComponentProps,
 	FC,
 	Fragment,
-	ReactNode,
 	Ref,
 	Suspense,
 	useEffect,
@@ -198,52 +196,6 @@ const fileRowLabel = (change: TreeChange) => {
 	);
 
 	return `${status} ${change.path}`;
-};
-
-const CommitFiles: FC<{
-	projectId: string;
-	commitId: string;
-	renderFile: (change: TreeChange) => ReactNode;
-}> = ({ projectId, commitId, renderFile }) => {
-	const { data } = useSuspenseQuery(
-		commitDetailsWithLineStatsQueryOptions({ projectId, commitId }),
-	);
-
-	const conflictedPaths = data.conflictEntries
-		? globalThis.Array.from(
-				new Set([
-					...data.conflictEntries.ancestorEntries,
-					...data.conflictEntries.ourEntries,
-					...data.conflictEntries.theirEntries,
-				]),
-			).sort((a: string, b: string) => a.localeCompare(b))
-		: [];
-
-	if (conflictedPaths.length === 0 && data.changes.length === 0)
-		return <div className={styles.itemRowEmpty}>No file changes.</div>;
-
-	return (
-		<>
-			{conflictedPaths.length > 0 && (
-				<div>
-					<div>Conflicts:</div>
-					<ul>
-						{conflictedPaths.map((path: string) => (
-							<li key={path}>{path}</li>
-						))}
-					</ul>
-				</div>
-			)}
-
-			{data.changes.length > 0 && (
-				<div role="group">
-					{data.changes.map((file) => (
-						<Fragment key={file.path}>{renderFile(file)}</Fragment>
-					))}
-				</div>
-			)}
-		</>
-	);
 };
 
 const ItemRowPresentational: FC<
@@ -765,7 +717,6 @@ const CommitRow: FC<
 		commit: Commit;
 		inlineRewordCommitFormRef: Ref<HTMLFormElement>;
 		workspaceMode: WorkspaceMode;
-		isExpanded: boolean;
 		projectId: string;
 		stackId: string;
 		navigationIndex: NavigationIndex;
@@ -775,7 +726,6 @@ const CommitRow: FC<
 	commit,
 	inlineRewordCommitFormRef,
 	workspaceMode,
-	isExpanded,
 	projectId,
 	stackId,
 	navigationIndex,
@@ -808,8 +758,6 @@ const CommitRow: FC<
 		(_currentMessage, nextMessage: string) => nextMessage,
 	);
 	const [isCommitMessagePending, startCommitMessageTransition] = useTransition();
-	// We use a controlled tooltip as a workaround for https://github.com/mui/base-ui/issues/4499.
-	const [isExpandCollapseTooltipOpen, setIsExpandCollapseTooltipOpen] = useState(false);
 
 	const commitWithOptimisticMessage: Commit = {
 		...commit,
@@ -933,33 +881,6 @@ const CommitRow: FC<
 					</div>
 					{workspaceMode._tag === "Default" && (
 						<ItemRowToolbar aria-label="Commit actions">
-							<Tooltip.Root
-								open={isExpandCollapseTooltipOpen}
-								// Prevent tooltip from lingering while moving between nearby controls.
-								// [tag:tooltip-disable-hoverable-popup]
-								disableHoverablePopup
-							>
-								<Tooltip.Trigger
-									render={<Toolbar.Button type="button" className={styles.itemRowToolbarButton} />}
-									onClick={() =>
-										dispatch(projectActions.toggleCommitFiles({ projectId, item: commitItemV }))
-									}
-									onMouseEnter={() => setIsExpandCollapseTooltipOpen(true)}
-									onMouseLeave={() => setIsExpandCollapseTooltipOpen(false)}
-									onFocus={() => setIsExpandCollapseTooltipOpen(true)}
-									onBlur={() => setIsExpandCollapseTooltipOpen(false)}
-									aria-label={"Toggle commit files"}
-								>
-									<ExpandCollapseIcon isExpanded={isExpanded} />
-								</Tooltip.Trigger>
-								<Tooltip.Portal>
-									<Tooltip.Positioner sideOffset={8}>
-										<Tooltip.Popup className={classes(uiStyles.popup, uiStyles.tooltip)}>
-											Toggle commit files
-										</Tooltip.Popup>
-									</Tooltip.Positioner>
-								</Tooltip.Portal>
-							</Tooltip.Root>
 							<Toolbar.Button
 								type="button"
 								className={styles.itemRowToolbarButton}
@@ -975,42 +896,6 @@ const CommitRow: FC<
 				</>
 			)}
 		</ItemRow>
-	);
-};
-
-const CommitFileRow: FC<{
-	change: TreeChange;
-	parentCommitItem: CommitItem;
-	navigationIndex: NavigationIndex;
-	projectId: string;
-}> = ({ change, parentCommitItem, navigationIndex, projectId }) => {
-	const item = fileItem({
-		parent: commitFileParent(parentCommitItem),
-		path: change.path,
-	});
-
-	return (
-		<TreeItem
-			projectId={projectId}
-			item={item}
-			label={fileRowLabel(change)}
-			render={
-				<OperationItem
-					projectId={projectId}
-					item={item}
-					render={
-						<ItemRow
-							projectId={projectId}
-							item={item}
-							navigationIndex={navigationIndex}
-							className={styles.fileRow}
-						/>
-					}
-				/>
-			}
-		>
-			<div className={styles.itemRowLabel}>{fileRowLabel(change)}</div>
-		</TreeItem>
 	);
 };
 
@@ -1031,9 +916,6 @@ const CommitC: FC<{
 	navigationIndex,
 	focusPanel,
 }) => {
-	const isExpanded = useAppSelector(
-		(state) => selectProjectExpandedCommitId(state, projectId) === commit.id,
-	);
 	const commitItemV: CommitItem = { stackId, commitId: commit.id };
 	const item = commitItem(commitItemV);
 
@@ -1042,35 +924,17 @@ const CommitC: FC<{
 			projectId={projectId}
 			item={item}
 			label={commitTitle(commit.message)}
-			expanded={isExpanded}
 			render={<OperationItem projectId={projectId} item={item} />}
 		>
 			<CommitRow
 				commit={commit}
 				inlineRewordCommitFormRef={inlineRewordCommitFormRef}
 				workspaceMode={workspaceMode}
-				isExpanded={isExpanded}
 				projectId={projectId}
 				stackId={stackId}
 				navigationIndex={navigationIndex}
 				focusPanel={focusPanel}
 			/>
-			{isExpanded && (
-				<Suspense fallback={<div className={styles.itemRowEmpty}>Loading commit files…</div>}>
-					<CommitFiles
-						projectId={projectId}
-						commitId={commit.id}
-						renderFile={(change) => (
-							<CommitFileRow
-								change={change}
-								parentCommitItem={commitItemV}
-								navigationIndex={navigationIndex}
-								projectId={projectId}
-							/>
-						)}
-					/>
-				</Suspense>
-			)}
 		</TreeItem>
 	);
 };
@@ -1755,16 +1619,13 @@ const ProjectPage: FC = () => {
 
 	const { id: projectId } = Route.useParams();
 
-	const expandedCommitId = useAppSelector((state) =>
-		selectProjectExpandedCommitId(state, projectId),
-	);
 	const workspaceMode = useAppSelector((state) =>
 		selectProjectWorkspaceModeState(state, projectId),
 	);
 	const { focusAdjacentPanel, focusPanel, panelElementRef } = useProjectPanelFocusManager();
 	const focusedPanel = useFocusedProjectPanel();
 
-	const workspaceOutline = useWorkspaceOutline({ projectId, expandedCommitId });
+	const workspaceOutline = useWorkspaceOutline({ projectId });
 
 	const navigationIndexUnfiltered = buildNavigationIndex(workspaceOutline);
 
