@@ -1312,6 +1312,30 @@ const ChangesFiles: FC<{
 	);
 };
 
+// TODO: show conflict status
+const CommitConflictingFileRow: FC<{
+	path: string;
+	parentCommitItem: CommitItem;
+	projectId: string;
+}> = ({ path, parentCommitItem, projectId }) => {
+	const item = fileItem({ parent: commitFileParent(parentCommitItem), path });
+	const isSelected = useIsItemFilesSelected({ projectId, item });
+
+	return (
+		<OperationSourceC
+			projectId={projectId}
+			source={item}
+			id={treeItemId(projectId, item)}
+			role="treeitem"
+			aria-label={path}
+			aria-selected={isSelected}
+			render={<FileItemRow projectId={projectId} item={item} className={styles.fileRow} />}
+		>
+			<div className={styles.itemRowLabel}>{path}</div>
+		</OperationSourceC>
+	);
+};
+
 const CommitFileRow: FC<{
 	change: TreeChange;
 	parentCommitItem: CommitItem;
@@ -1375,14 +1399,19 @@ const CommitFiles: FC<{
 
 				return (
 					<>
+						{/* TODO: combine with other changes and sort */}
 						{conflictedPaths.length > 0 && (
-							<div>
-								<div>Conflicts:</div>
-								<ul>
-									{conflictedPaths.map((path: string) => (
-										<li key={path}>{path}</li>
-									))}
-								</ul>
+							<div role="group">
+								{conflictedPaths.map((path: string) => (
+									// TODO: when we have conflicted file and unconflicted file,
+									// preview doesn't update when clicking on this
+									<CommitConflictingFileRow
+										key={path}
+										path={path}
+										parentCommitItem={commitItemV}
+										projectId={projectId}
+									/>
+								))}
 							</div>
 						)}
 
