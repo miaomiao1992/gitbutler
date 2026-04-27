@@ -20,13 +20,18 @@ import {
 	rubOperationMode,
 	type WorkspaceMode,
 } from "../workspace/WorkspaceMode.ts";
+import { Panel } from "./layout.ts";
 
 export type WorkspaceSelectionState = {
-	item: Item;
+	primary: Item;
+	files: Item;
+	show: Item | null;
 };
 
 const createInitialWorkspaceSelectionState = (): WorkspaceSelectionState => ({
-	item: changesSectionItem,
+	primary: changesSectionItem,
+	files: changesSectionItem,
+	show: null,
 });
 
 export type WorkspaceState = {
@@ -82,8 +87,12 @@ export const exitMode = (state: WorkspaceState) => {
 	state.mode = defaultWorkspaceMode;
 };
 
-export const selectItem = (state: WorkspaceState, item: Item) => {
-	state.selection.item = item;
+export const selectItem = (state: WorkspaceState, panel: Panel, item: Item) => {
+	state.selection[panel] = item;
+
+	if (panel === "primary") state.selection.files = item;
+	if (panel === "primary" || panel === "files") state.selection.show = null;
+
 	if (!isValidWorkspaceModeForSelectedItem({ mode: state.mode, selectedItem: item }))
 		state.mode = defaultWorkspaceMode;
 };
@@ -93,7 +102,7 @@ export const setHighlightedCommitIds = (state: WorkspaceState, commitIds: Array<
 };
 
 export const startRenameBranch = (state: WorkspaceState, item: BranchItem) => {
-	selectItem(state, branchItem(item));
+	selectItem(state, "primary", branchItem(item));
 	state.mode = renameBranchWorkspaceMode({
 		stackId: item.stackId,
 		branchRef: item.branchRef,
@@ -101,16 +110,12 @@ export const startRenameBranch = (state: WorkspaceState, item: BranchItem) => {
 };
 
 export const startRewordCommit = (state: WorkspaceState, item: CommitItem) => {
-	selectItem(state, commitItem(item));
+	selectItem(state, "primary", commitItem(item));
 	state.mode = rewordCommitWorkspaceMode({
 		stackId: item.stackId,
 		commitId: item.commitId,
 	});
 };
-
-const selectSelection = (state: WorkspaceState): WorkspaceSelectionState => state.selection;
-
-export const selectSelectedItem = (state: WorkspaceState): Item => selectSelection(state).item;
 
 export const selectMode = (state: WorkspaceState): WorkspaceMode => state.mode;
 

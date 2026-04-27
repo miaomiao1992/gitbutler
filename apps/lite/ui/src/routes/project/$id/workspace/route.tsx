@@ -34,8 +34,8 @@ import {
 	projectActions,
 	selectProjectHighlightedCommitIds,
 	selectProjectOperationModeState,
-	selectProjectSelectedItem,
 	selectProjectWorkspaceModeState,
+	selectProjectWorkspaceState,
 } from "#ui/routes/project/$id/state/projectSlice.ts";
 import { AbsorptionDialog } from "#ui/routes/project/$id/workspace/Absorption.tsx";
 import { OperationSourceC } from "#ui/routes/project/$id/workspace/OperationSourceC.tsx";
@@ -136,11 +136,31 @@ import { Panel } from "#ui/routes/project/$id/state/layout.ts";
 
 type HunkDependencyDiff = HunkDependencies["diffs"][number];
 
-const useIsItemSelected = ({ projectId, item }: { projectId: string; item: Item }): boolean =>
+const useIsItemPrimarySelected = ({
+	projectId,
+	item,
+}: {
+	projectId: string;
+	item: Item;
+}): boolean =>
 	useAppSelector((state) => {
-		const selectedItem = selectProjectSelectedItem(state, projectId);
+		const selectedItem = selectProjectWorkspaceState(state, projectId).selection.primary;
 
 		return itemEquals(selectedItem, item);
+	});
+
+const useIsItemFilesSelected = ({ projectId, item }: { projectId: string; item: Item }): boolean =>
+	useAppSelector((state) => {
+		const selectedItem = selectProjectWorkspaceState(state, projectId).selection.files;
+
+		return itemEquals(selectedItem, item);
+	});
+
+const useIsItemShowSelected = ({ projectId, item }: { projectId: string; item: Item }): boolean =>
+	useAppSelector((state) => {
+		const selectedItem = selectProjectWorkspaceState(state, projectId).selection.show;
+
+		return !!selectedItem && itemEquals(selectedItem, item);
 	});
 
 const treeItemId = (projectId: string, item: Item): string =>
@@ -223,7 +243,7 @@ const ItemRowPresentational: FC<
 	);
 };
 
-const ItemRow: FC<
+const PrimaryItemRow: FC<
 	{
 		projectId: string;
 		item: Item;
@@ -231,7 +251,7 @@ const ItemRow: FC<
 	} & Omit<ComponentProps<typeof ItemRowPresentational>, "inert" | "isSelected">
 > = ({ projectId, item, navigationIndex, onClick, ...props }) => {
 	const dispatch = useAppDispatch();
-	const isSelected = useIsItemSelected({ projectId, item });
+	const isSelected = useIsItemPrimarySelected({ projectId, item });
 
 	return (
 		<ItemRowPresentational
@@ -240,7 +260,8 @@ const ItemRow: FC<
 			isSelected={isSelected}
 			onClick={(event) => {
 				onClick?.(event);
-				if (!event.defaultPrevented) dispatch(projectActions.selectItem({ projectId, item }));
+				if (!event.defaultPrevented)
+					dispatch(projectActions.selectItem({ projectId, panel: "primary", item }));
 			}}
 		/>
 	);
@@ -268,7 +289,7 @@ const TreeItem: FC<
 		expanded?: boolean;
 	} & useRender.ComponentProps<"div">
 > = ({ projectId, item, label, expanded, render, ...props }) => {
-	const isSelected = useIsItemSelected({ projectId, item });
+	const isSelected = useIsItemPrimarySelected({ projectId, item });
 
 	return useRender({
 		render,
@@ -289,7 +310,7 @@ const OperationItem: FC<
 		item: Item;
 	} & useRender.ComponentProps<"div">
 > = ({ projectId, item, render, ...props }) => {
-	const isSelected = useIsItemSelected({ projectId, item });
+	const isSelected = useIsItemPrimarySelected({ projectId, item });
 
 	return useRender({
 		render: (
@@ -409,6 +430,53 @@ const getDependencyCommitIds = ({
 	return isNonEmptyArray(dependencyCommitIds) ? dependencyCommitIds : undefined;
 };
 
+const ShowItemRowPresentational: FC<
+	{
+		isSelected?: boolean;
+	} & ComponentProps<"div">
+> = ({ className, isSelected, ref: refProp, ...props }) => {
+	const rowRef = useRef<HTMLDivElement | null>(null);
+	const mergedRef = useMergedRefs(rowRef, refProp);
+
+	useLayoutEffect(() => {
+		if (!isSelected) return;
+		rowRef.current?.scrollIntoView({
+			block: "nearest",
+			inline: "nearest",
+		});
+	}, [isSelected]);
+
+	return (
+		<div
+			{...props}
+			ref={mergedRef}
+			className={classes(className, styles.showItemRow, isSelected && styles.showItemRowSelected)}
+		/>
+	);
+};
+
+const ShowItemRow: FC<
+	{
+		projectId: string;
+		item: Item;
+	} & Omit<ComponentProps<typeof ItemRowPresentational>, "isSelected">
+> = ({ projectId, item, onClick, ...props }) => {
+	const dispatch = useAppDispatch();
+	const isSelected = useIsItemShowSelected({ projectId, item });
+
+	return (
+		<ShowItemRowPresentational
+			{...props}
+			isSelected={isSelected}
+			onClick={(event) => {
+				onClick?.(event);
+				if (!event.defaultPrevented)
+					dispatch(projectActions.selectItem({ projectId, panel: "show", item }));
+			}}
+		/>
+	);
+};
+
 const Hunk: FC<{
 	isResultOfBinaryToTextConversion: boolean;
 	projectId: string;
@@ -437,7 +505,7 @@ const Hunk: FC<{
 	});
 
 	return (
-		<div>
+		<ShowItemRow projectId={projectId} item={item}>
 			<OperationSourceC projectId={projectId} source={item}>
 				<div className={styles.hunkHeaderRow}>
 					{dependencyCommitIds && (
@@ -449,7 +517,7 @@ const Hunk: FC<{
 				</div>
 			</OperationSourceC>
 			<HunkDiff change={change} diff={hunk.diff} />
-		</div>
+		</ShowItemRow>
 	);
 };
 
@@ -500,6 +568,36 @@ const ChangesFileDiffList: FC<{
 		queries: changes.map((change) => treeChangeDiffsQueryOptions({ projectId, change })),
 	}).map((result) => result.data);
 	const changesWithDiffs = pipe(changes, Array.zip(treeChangeDiffs));
+
+	const dispatch = useAppDispatch();
+
+	const selectedShowItem = useAppSelector(
+		(state) => selectProjectWorkspaceState(state, projectId).selection.show,
+	);
+
+	// React allows state updates on render, but not for external stores.
+	// https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
+	useEffect(() => {
+		if (selectedShowItem) return;
+
+		for (const [change, diff] of changesWithDiffs)
+			if (diff?.type === "Patch" && diff.subject.hunks[0]) {
+				dispatch(
+					projectActions.selectItem({
+						projectId,
+						panel: "show",
+						item: hunkItem({
+							parent: fileParent,
+							path: change.path,
+							hunkHeader: diff.subject.hunks[0],
+							isResultOfBinaryToTextConversion: diff.subject.isResultOfBinaryToTextConversion,
+						}),
+					}),
+				);
+
+				break;
+			}
+	}, [dispatch, fileParent, changesWithDiffs, projectId, selectedShowItem]);
 
 	return changesWithDiffs.length === 0 ? (
 		<div>No file changes.</div>
@@ -742,7 +840,7 @@ const CommitRow: FC<
 		commitId: commit.id,
 	};
 	const item = commitItem(commitItemV);
-	const isSelected = useIsItemSelected({ projectId, item });
+	const isSelected = useIsItemPrimarySelected({ projectId, item });
 	const isRewording =
 		isSelected &&
 		workspaceMode._tag === "RewordCommit" &&
@@ -774,7 +872,7 @@ const CommitRow: FC<
 
 	const endEditing = () => {
 		dispatch(projectActions.exitMode({ projectId }));
-		dispatch(projectActions.selectItem({ projectId, item }));
+		dispatch(projectActions.selectItem({ projectId, panel: "primary", item }));
 		focusPanel("primary");
 	};
 
@@ -851,7 +949,7 @@ const CommitRow: FC<
 	];
 
 	return (
-		<ItemRow
+		<PrimaryItemRow
 			{...restProps}
 			projectId={projectId}
 			item={item}
@@ -895,7 +993,7 @@ const CommitRow: FC<
 					)}
 				</>
 			)}
-		</ItemRow>
+		</PrimaryItemRow>
 	);
 };
 
@@ -942,18 +1040,10 @@ const CommitC: FC<{
 const ChangesFileRow: FC<{
 	change: TreeChange;
 	dependencyCommitIds: NonEmptyArray<string> | undefined;
-	navigationIndex: NavigationIndex;
 	onAbsorbChanges: (target: AbsorptionTarget) => void;
 	workspaceMode: WorkspaceMode;
 	projectId: string;
-}> = ({
-	change,
-	dependencyCommitIds,
-	navigationIndex,
-	onAbsorbChanges,
-	workspaceMode,
-	projectId,
-}) => {
+}> = ({ change, dependencyCommitIds, onAbsorbChanges, workspaceMode, projectId }) => {
 	const item = fileItem({ parent: changesFileParent, path: change.path });
 
 	const menuItems: Array<NativeMenuItem> = [
@@ -981,7 +1071,7 @@ const ChangesFileRow: FC<{
 				<OperationItem
 					projectId={projectId}
 					item={item}
-					render={<ItemRow projectId={projectId} item={item} navigationIndex={navigationIndex} />}
+					render={<FileItemRow projectId={projectId} item={item} />}
 				/>
 			}
 		>
@@ -1042,7 +1132,7 @@ const ChangesSectionRow: FC<{
 	];
 
 	return (
-		<ItemRow projectId={projectId} item={item} navigationIndex={navigationIndex}>
+		<PrimaryItemRow projectId={projectId} item={item} navigationIndex={navigationIndex}>
 			<div
 				className={classes(styles.itemRowLabel, styles.sectionLabel)}
 				onContextMenu={(event) => {
@@ -1068,7 +1158,7 @@ const ChangesSectionRow: FC<{
 					</Toolbar.Button>
 				</ItemRowToolbar>
 			)}
-		</ItemRow>
+		</PrimaryItemRow>
 	);
 };
 
@@ -1089,7 +1179,9 @@ const BaseCommit: FC<{
 					<OperationItem
 						projectId={projectId}
 						item={item}
-						render={<ItemRow projectId={projectId} item={item} navigationIndex={navigationIndex} />}
+						render={
+							<PrimaryItemRow projectId={projectId} item={item} navigationIndex={navigationIndex} />
+						}
 					/>
 				}
 			>
@@ -1112,6 +1204,71 @@ const Changes: FC<{
 }> = ({ projectId, onAbsorbChanges, onCommit, navigationIndex, workspaceMode }) => {
 	const { data: worktreeChanges } = useSuspenseQuery(changesInWorktreeQueryOptions(projectId));
 
+	const item = changesSectionItem;
+	const isSelected = useIsItemPrimarySelected({ projectId, item });
+
+	return (
+		<OperationSourceC
+			projectId={projectId}
+			source={item}
+			className={styles.section}
+			id={treeItemId(projectId, item)}
+			role="treeitem"
+			aria-label="Changes"
+			aria-selected={isSelected}
+			aria-expanded
+			render={<OperationTarget item={item} projectId={projectId} isSelected={isSelected} />}
+		>
+			<ChangesSectionRow
+				changes={worktreeChanges.changes}
+				navigationIndex={navigationIndex}
+				onAbsorbChanges={onAbsorbChanges}
+				onCommit={onCommit}
+				projectId={projectId}
+				workspaceMode={workspaceMode}
+			/>
+		</OperationSourceC>
+	);
+};
+
+const FileItemRow: FC<
+	{
+		projectId: string;
+		item: Item;
+	} & Omit<ComponentProps<typeof ItemRowPresentational>, "isSelected">
+> = ({ projectId, item, onClick, ...props }) => {
+	const dispatch = useAppDispatch();
+	const isSelected = useIsItemFilesSelected({ projectId, item });
+
+	return (
+		<ItemRowPresentational
+			{...props}
+			isSelected={isSelected}
+			onClick={(event) => {
+				onClick?.(event);
+				if (!event.defaultPrevented)
+					dispatch(projectActions.selectItem({ projectId, panel: "files", item }));
+			}}
+		/>
+	);
+};
+
+const AllChangesFileRow: FC<{
+	projectId: string;
+	item: Item;
+}> = ({ projectId, item }) => (
+	<FileItemRow projectId={projectId} item={item}>
+		<div className={classes(styles.itemRowLabel, styles.sectionLabel)}>All changes</div>
+	</FileItemRow>
+);
+
+const ChangesFiles: FC<{
+	projectId: string;
+	onAbsorbChanges: (target: AbsorptionTarget) => void;
+	workspaceMode: WorkspaceMode;
+}> = ({ projectId, onAbsorbChanges, workspaceMode }) => {
+	const { data: worktreeChanges } = useSuspenseQuery(changesInWorktreeQueryOptions(projectId));
+
 	const hunkDependencyDiffsByPath = getHunkDependencyDiffsByPath(
 		worktreeChanges.dependencies?.diffs ?? [],
 	);
@@ -1127,14 +1284,7 @@ const Changes: FC<{
 			className={styles.section}
 			render={<OperationItem projectId={projectId} item={item} />}
 		>
-			<ChangesSectionRow
-				changes={worktreeChanges.changes}
-				navigationIndex={navigationIndex}
-				onAbsorbChanges={onAbsorbChanges}
-				onCommit={onCommit}
-				projectId={projectId}
-				workspaceMode={workspaceMode}
-			/>
+			<AllChangesFileRow projectId={projectId} item={item} />
 			{worktreeChanges.changes.length === 0 ? (
 				<div className={styles.itemRowEmpty}>No changes.</div>
 			) : (
@@ -1150,7 +1300,6 @@ const Changes: FC<{
 								key={change.path}
 								change={change}
 								dependencyCommitIds={dependencyCommitIds}
-								navigationIndex={navigationIndex}
 								onAbsorbChanges={onAbsorbChanges}
 								workspaceMode={workspaceMode}
 								projectId={projectId}
@@ -1162,6 +1311,196 @@ const Changes: FC<{
 		</TreeItem>
 	);
 };
+
+const CommitFileRow: FC<{
+	change: TreeChange;
+	parentCommitItem: CommitItem;
+	projectId: string;
+}> = ({ change, parentCommitItem, projectId }) => {
+	const item = fileItem({ parent: commitFileParent(parentCommitItem), path: change.path });
+	const isSelected = useIsItemFilesSelected({ projectId, item });
+
+	return (
+		<OperationSourceC
+			projectId={projectId}
+			source={item}
+			id={treeItemId(projectId, item)}
+			role="treeitem"
+			aria-label={fileRowLabel(change)}
+			aria-selected={isSelected}
+			render={<FileItemRow projectId={projectId} item={item} className={styles.fileRow} />}
+		>
+			<div className={styles.itemRowLabel}>{fileRowLabel(change)}</div>
+		</OperationSourceC>
+	);
+};
+
+const CommitFiles: FC<{
+	projectId: string;
+	commitId: string;
+	stackId: string;
+}> = ({ projectId, commitId, stackId }) => {
+	const commitItemV: CommitItem = { stackId, commitId };
+	const item = commitItem(commitItemV);
+	const isSelected = useIsItemPrimarySelected({ projectId, item });
+
+	const { data } = useSuspenseQuery(
+		commitDetailsWithLineStatsQueryOptions({ projectId, commitId }),
+	);
+
+	const conflictedPaths = data.conflictEntries
+		? globalThis.Array.from(
+				new Set([
+					...data.conflictEntries.ancestorEntries,
+					...data.conflictEntries.ourEntries,
+					...data.conflictEntries.theirEntries,
+				]),
+			).sort((a: string, b: string) => a.localeCompare(b))
+		: [];
+
+	return (
+		<OperationSourceC
+			projectId={projectId}
+			source={item}
+			id={treeItemId(projectId, item)}
+			role="treeitem"
+			aria-label={commitTitle(data.commit.message)}
+			aria-selected={isSelected}
+			render={<OperationTarget item={item} projectId={projectId} isSelected={isSelected} />}
+		>
+			<AllChangesFileRow projectId={projectId} item={item} />
+			{(() => {
+				if (conflictedPaths.length === 0 && data.changes.length === 0)
+					return <div className={styles.itemRowEmpty}>No file changes.</div>;
+
+				return (
+					<>
+						{conflictedPaths.length > 0 && (
+							<div>
+								<div>Conflicts:</div>
+								<ul>
+									{conflictedPaths.map((path: string) => (
+										<li key={path}>{path}</li>
+									))}
+								</ul>
+							</div>
+						)}
+
+						{data.changes.length > 0 && (
+							<div role="group">
+								{data.changes.map((file) => (
+									<CommitFileRow
+										key={file.path}
+										change={file}
+										parentCommitItem={commitItemV}
+										projectId={projectId}
+									/>
+								))}
+							</div>
+						)}
+					</>
+				);
+			})()}
+		</OperationSourceC>
+	);
+};
+
+const BranchFileRow: FC<{
+	change: TreeChange;
+	parentBranchItem: BranchItem;
+	projectId: string;
+}> = ({ change, parentBranchItem, projectId }) => {
+	const item = fileItem({ parent: branchFileParent(parentBranchItem), path: change.path });
+	const isSelected = useIsItemFilesSelected({ projectId, item });
+
+	return (
+		<OperationSourceC
+			projectId={projectId}
+			source={item}
+			id={treeItemId(projectId, item)}
+			role="treeitem"
+			aria-label={fileRowLabel(change)}
+			aria-selected={isSelected}
+			render={<FileItemRow projectId={projectId} item={item} className={styles.fileRow} />}
+		>
+			<div className={styles.itemRowLabel}>{fileRowLabel(change)}</div>
+		</OperationSourceC>
+	);
+};
+
+const BranchFiles: FC<{
+	projectId: string;
+	branchRef: Array<number>;
+	stackId: string;
+}> = ({ projectId, branchRef, stackId }) => {
+	const branchItemV: BranchItem = { stackId, branchRef };
+	const item = branchItem(branchItemV);
+	const isSelected = useIsItemPrimarySelected({ projectId, item });
+
+	const decodedBranchRef = decodeRefName(branchRef);
+	const [{ data: branchDetails }, { data: branchDiff }] = useSuspenseQueries({
+		queries: [
+			branchDetailsQueryOptions({
+				projectId,
+				// https://linear.app/gitbutler/issue/GB-1226/unify-branch-identifiers
+				branchName: decodedBranchRef.replace(/^refs\/heads\//, ""),
+				remote: null,
+			}),
+			branchDiffQueryOptions({ projectId, branch: decodedBranchRef }),
+		],
+	});
+
+	return (
+		<OperationSourceC
+			projectId={projectId}
+			source={item}
+			id={treeItemId(projectId, item)}
+			role="treeitem"
+			aria-label={branchDetails.name}
+			aria-selected={isSelected}
+			render={<OperationTarget item={item} projectId={projectId} isSelected={isSelected} />}
+		>
+			<AllChangesFileRow projectId={projectId} item={item} />
+			{branchDiff.changes.length === 0 ? (
+				<div className={styles.itemRowEmpty}>No changes.</div>
+			) : (
+				<div role="group">
+					{branchDiff.changes.map((change) => (
+						<BranchFileRow
+							key={change.path}
+							change={change}
+							parentBranchItem={branchItemV}
+							projectId={projectId}
+						/>
+					))}
+				</div>
+			)}
+		</OperationSourceC>
+	);
+};
+
+const Files: FC<{
+	projectId: string;
+	primarySelectedItem: Item;
+	onAbsorbChanges: (target: AbsorptionTarget) => void;
+	workspaceMode: WorkspaceMode;
+}> = ({ projectId, primarySelectedItem, onAbsorbChanges, workspaceMode }) =>
+	Match.value(primarySelectedItem).pipe(
+		Match.tag("Commit", (commit) => (
+			<CommitFiles projectId={projectId} commitId={commit.commitId} stackId={commit.stackId} />
+		)),
+		Match.tag("ChangesSection", () => (
+			<ChangesFiles
+				projectId={projectId}
+				onAbsorbChanges={onAbsorbChanges}
+				workspaceMode={workspaceMode}
+			/>
+		)),
+		Match.tag("Branch", ({ stackId, branchRef }) => (
+			<BranchFiles projectId={projectId} branchRef={branchRef} stackId={stackId} />
+		)),
+		Match.orElse(() => null),
+	);
 
 const InlineRenameBranch: FC<{
 	branchName: string;
@@ -1242,7 +1581,7 @@ const BranchRow: FC<
 
 	const endEditing = () => {
 		dispatch(projectActions.exitMode({ projectId }));
-		dispatch(projectActions.selectItem({ projectId, item }));
+		dispatch(projectActions.selectItem({ projectId, panel: "primary", item }));
 		focusPanel("primary");
 	};
 
@@ -1268,7 +1607,7 @@ const BranchRow: FC<
 				// TODO: ideally the API would return the new ref?
 				branchRef: encodeRefName(`refs/heads/${trimmed}`),
 			});
-			dispatch(projectActions.selectItem({ projectId, item: newItem }));
+			dispatch(projectActions.selectItem({ projectId, panel: "primary", item: newItem }));
 			dispatch(projectActions.exitMode({ projectId }));
 		});
 	};
@@ -1283,7 +1622,12 @@ const BranchRow: FC<
 	];
 
 	return (
-		<ItemRow {...restProps} projectId={projectId} item={item} navigationIndex={navigationIndex}>
+		<PrimaryItemRow
+			{...restProps}
+			projectId={projectId}
+			item={item}
+			navigationIndex={navigationIndex}
+		>
 			{isRenaming ? (
 				<InlineRenameBranch
 					branchName={optimisticBranchName}
@@ -1329,7 +1673,7 @@ const BranchRow: FC<
 					)}
 				</>
 			)}
-		</ItemRow>
+		</PrimaryItemRow>
 	);
 };
 
@@ -1360,7 +1704,12 @@ const StackRow: FC<
 	];
 
 	return (
-		<ItemRow {...restProps} projectId={projectId} item={item} navigationIndex={navigationIndex}>
+		<PrimaryItemRow
+			{...restProps}
+			projectId={projectId}
+			item={item}
+			navigationIndex={navigationIndex}
+		>
 			<div
 				className={classes(styles.itemRowLabel, styles.sectionLabel)}
 				onContextMenu={
@@ -1387,7 +1736,7 @@ const StackRow: FC<
 					</Toolbar.Button>
 				</ItemRowToolbar>
 			)}
-		</ItemRow>
+		</PrimaryItemRow>
 	);
 };
 
@@ -1641,19 +1990,28 @@ const ProjectPage: FC = () => {
 			dispatch(projectActions.exitMode({ projectId }));
 	}, [workspaceMode, navigationIndexUnfiltered, projectId, dispatch]);
 
-	const selectedItem = useAppSelector((state) => selectProjectSelectedItem(state, projectId));
+	const primarySelectedItem = useAppSelector(
+		(state) => selectProjectWorkspaceState(state, projectId).selection.primary,
+	);
+	const filesSelectedItem = useAppSelector(
+		(state) => selectProjectWorkspaceState(state, projectId).selection.files,
+	);
+	const showSelectedItem = useAppSelector(
+		(state) => selectProjectWorkspaceState(state, projectId).selection.show,
+	);
 
 	// React allows state updates on render, but not for external stores.
 	// https://react.dev/learn/you-might-not-need-an-effect#adjusting-some-state-when-a-prop-changes
 	useEffect(() => {
-		if (!navigationIndexIncludes(navigationIndexUnfiltered, selectedItem))
+		if (!navigationIndexIncludes(navigationIndexUnfiltered, primarySelectedItem))
 			dispatch(
 				projectActions.selectItem({
 					projectId,
+					panel: "primary",
 					item: changesSectionItem,
 				}),
 			);
-	}, [navigationIndexUnfiltered, selectedItem, projectId, dispatch]);
+	}, [navigationIndexUnfiltered, primarySelectedItem, projectId, dispatch]);
 
 	const operationMode = useAppSelector((state) =>
 		selectProjectOperationModeState(state, projectId),
@@ -1667,14 +2025,18 @@ const ProjectPage: FC = () => {
 						// When entering operation mode, the selected item must still be
 						// selectable otherwise the preview will suddenly appear to change
 						// and the user may lose sight of their source item (e.g. hunk).
-						itemEquals(selectedItem, item) ||
+						itemEquals(primarySelectedItem, item) ||
 						// After selection moves, allow returning selection to the source item.
 						(operationMode?.source && itemEquals(operationMode.source, item)) ||
 						includeItemForWorkspaceMode({ mode: workspaceMode, item }),
 				)
 			: navigationIndexUnfiltered;
 
-	const shortcutScope = getScope({ selectedItem, focusedPanel, workspaceMode });
+	const shortcutScope = getScope({
+		selectedItem: primarySelectedItem,
+		focusedPanel,
+		workspaceMode,
+	});
 
 	const [absorptionTarget, setAbsorptionTarget] = useState<AbsorptionTarget | null>(null);
 
@@ -1717,6 +2079,7 @@ const ProjectPage: FC = () => {
 		dispatch(
 			projectActions.selectItem({
 				projectId,
+				panel: "primary",
 				item: branchItem(option.branch),
 			}),
 		);
@@ -1734,11 +2097,25 @@ const ProjectPage: FC = () => {
 		<>
 			<ProjectPreviewLayout
 				projectId={projectId}
-				primaryActiveDescendantId={treeItemId(projectId, selectedItem)}
+				primaryActiveDescendantId={treeItemId(projectId, primarySelectedItem)}
+				filesActiveDescendantId={treeItemId(projectId, filesSelectedItem)}
+				showActiveDescendantId={
+					showSelectedItem ? treeItemId(projectId, showSelectedItem) : undefined
+				}
 				panelElementRef={panelElementRef}
+				files={
+					<Suspense fallback={<div>Loading preview (files)…</div>}>
+						<Files
+							projectId={projectId}
+							primarySelectedItem={primarySelectedItem}
+							onAbsorbChanges={openAbsorptionDialog}
+							workspaceMode={workspaceMode}
+						/>
+					</Suspense>
+				}
 				show={
 					<Suspense fallback={<div>Loading preview (show)…</div>}>
-						<Show projectId={projectId} selectedItem={selectedItem} />
+						<Show projectId={projectId} selectedItem={filesSelectedItem} />
 					</Suspense>
 				}
 			>

@@ -1,8 +1,8 @@
-import { changesInWorktreeQueryOptions, headInfoQueryOptions } from "#ui/api/queries.ts";
-import { CommitDetails, Segment, type RefInfo, type TreeChange } from "@gitbutler/but-sdk";
+import { headInfoQueryOptions } from "#ui/api/queries.ts";
+import { CommitDetails, Segment, type RefInfo } from "@gitbutler/but-sdk";
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { type NonEmptyArray } from "effect/Array";
-import { changesFileParent, commitFileParent } from "#ui/domain/FileParent.ts";
+import { commitFileParent } from "#ui/domain/FileParent.ts";
 import {
 	branchItem,
 	baseCommitItem,
@@ -23,18 +23,16 @@ type WorkspaceOutline = NonEmptyArray<WorkspaceSection>;
 
 type BuildWorkspaceOutlineArgs = {
 	headInfo: RefInfo;
-	changes: Array<TreeChange>;
 	expandedCommitDetails?: CommitDetails;
 };
 
 const buildWorkspaceOutline = ({
 	headInfo,
-	changes,
 	expandedCommitDetails,
 }: BuildWorkspaceOutlineArgs): WorkspaceOutline => {
 	const changesSection: WorkspaceSection = {
 		section: changesSectionItem,
-		children: changes.map((change) => fileItem({ parent: changesFileParent, path: change.path })),
+		children: [],
 	};
 
 	const segmentChildren = (stackId: string, segment: Segment): Array<Item> =>
@@ -93,11 +91,9 @@ const buildWorkspaceOutline = ({
 
 export const useWorkspaceOutline = ({ projectId }: { projectId: string }) => {
 	const { data: headInfo } = useSuspenseQuery(headInfoQueryOptions(projectId));
-	const { data: worktreeChanges } = useSuspenseQuery(changesInWorktreeQueryOptions(projectId));
 
 	return buildWorkspaceOutline({
 		headInfo,
-		changes: worktreeChanges.changes,
 	});
 };
 

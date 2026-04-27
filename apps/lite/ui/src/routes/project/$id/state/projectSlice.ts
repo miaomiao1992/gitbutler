@@ -41,10 +41,13 @@ const projectSlice = createSlice({
 	name: "project",
 	initialState,
 	reducers: {
-		selectItem: (state, action: PayloadAction<{ projectId: string; item: Item }>) => {
-			const { projectId, item } = action.payload;
+		selectItem: (
+			state,
+			action: PayloadAction<{ projectId: string; panel: layout.Panel; item: Item }>,
+		) => {
+			const { projectId, panel, item } = action.payload;
 			const projectState = ensureProjectState(state, projectId);
-			workspace.selectItem(projectState.workspace, item);
+			workspace.selectItem(projectState.workspace, panel, item);
 		},
 		startRewordCommit: (state, action: PayloadAction<{ projectId: string; item: CommitItem }>) => {
 			const { projectId, item } = action.payload;
@@ -128,11 +131,8 @@ const selectProjectState = (state: RootState, projectId: string): ProjectState =
 export const selectProjectLayoutState = (state: RootState, projectId: string) =>
 	selectProjectState(state, projectId).layout;
 
-const selectProjectWorkspaceState = (state: RootState, projectId: string) =>
+export const selectProjectWorkspaceState = (state: RootState, projectId: string) =>
 	selectProjectState(state, projectId).workspace;
-
-export const selectProjectSelectedItem = (state: RootState, projectId: string) =>
-	workspace.selectSelectedItem(selectProjectWorkspaceState(state, projectId));
 
 export const selectProjectWorkspaceModeState = (state: RootState, projectId: string) =>
 	workspace.selectMode(selectProjectWorkspaceState(state, projectId));

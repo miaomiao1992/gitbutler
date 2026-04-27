@@ -599,6 +599,7 @@ export const getScope = ({
 	Match.value(focusedPanel).pipe(
 		Match.when(null, () => null),
 		Match.when("show", () => showScope({ bindings: showBindings })),
+		Match.when("files", () => null),
 		Match.when("primary", () => getModeScope({ selectedItem, workspaceMode })),
 		Match.exhaustive,
 	);
@@ -677,7 +678,7 @@ export const useWorkspaceShortcuts = ({
 			}),
 		);
 		if (!newItem) return;
-		dispatch(projectActions.selectItem({ projectId, item: newItem }));
+		dispatch(projectActions.selectItem({ projectId, panel: "primary", item: newItem }));
 	};
 
 	const handleItemSelectionAction = (action: ItemSelectionAction, selectedItem: Item) =>
@@ -724,7 +725,9 @@ export const useWorkspaceShortcuts = ({
 					),
 				SelectBranch: () => openBranchPicker(),
 				SelectChanges: () =>
-					dispatch(projectActions.selectItem({ projectId, item: changesSectionItem })),
+					dispatch(
+						projectActions.selectItem({ projectId, panel: "primary", item: changesSectionItem }),
+					),
 			}),
 			Match.orElse((action) => {
 				if (isPanelNavigationAction(action)) {

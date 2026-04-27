@@ -58,10 +58,22 @@ export const useProjectPanelFocusManager = () => {
 export const ProjectPreviewLayout: FC<{
 	projectId: string;
 	primaryActiveDescendantId?: string;
+	filesActiveDescendantId?: string;
+	showActiveDescendantId?: string;
 	children: ReactNode;
+	files: ReactNode | null;
 	show: ReactNode | null;
 	panelElementRef: (panel: PanelType) => (element: HTMLDivElement | null) => void;
-}> = ({ primaryActiveDescendantId, children, panelElementRef, projectId, show }) => {
+}> = ({
+	primaryActiveDescendantId,
+	filesActiveDescendantId,
+	showActiveDescendantId,
+	children,
+	panelElementRef,
+	projectId,
+	files,
+	show,
+}) => {
 	const layoutState = useAppSelector((state) => selectProjectLayoutState(state, projectId));
 	const { defaultLayout, onLayoutChanged } = useDefaultLayout({
 		id: `project:${projectId}:layout`,
@@ -83,6 +95,22 @@ export const ProjectPreviewLayout: FC<{
 			>
 				{children}
 			</Panel>
+			{isPanelVisible(layoutState, "files") && (
+				<>
+					<Separator className={styles.panelResizeHandle} />
+					<Panel
+						id={"files" satisfies PanelType}
+						minSize={400}
+						elementRef={panelElementRef("files")}
+						tabIndex={0}
+						role="tree"
+						aria-activedescendant={filesActiveDescendantId}
+						className={classes(styles.panel, styles.filesPanel)}
+					>
+						{files}
+					</Panel>
+				</>
+			)}
 			{isPanelVisible(layoutState, "show") && (
 				<>
 					<Separator className={styles.panelResizeHandle} />
@@ -92,6 +120,9 @@ export const ProjectPreviewLayout: FC<{
 						defaultSize="70%"
 						elementRef={panelElementRef("show")}
 						tabIndex={0}
+						role="tree"
+						// TODO: treeitems
+						aria-activedescendant={showActiveDescendantId}
 						className={styles.panel}
 					>
 						{show}

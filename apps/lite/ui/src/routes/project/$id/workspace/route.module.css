@@ -44,6 +44,18 @@
 	color: var(--color-text);
 }
 
+.showItemRow {
+	border: 2px solid transparent;
+}
+
+.showItemRowSelected {
+	border-color: var(--color-item-row-selected-unfocused-bg);
+
+	:where([data-panel]:focus-within) & {
+		border-color: var(--color-item-row-selected-focused-bg);
+	}
+}
+
 .section {
 	border-radius: 8px;
 	background-color: var(--color-section-selected-bg);
