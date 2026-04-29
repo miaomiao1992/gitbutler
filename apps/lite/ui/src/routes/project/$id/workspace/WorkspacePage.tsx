@@ -473,7 +473,31 @@ const useLogSelectionHotkeys = ({
 				},
 			},
 			{
+				hotkey: "Meta+ArrowUp",
+				callback: selectFirstItem,
+				options: {
+					meta: {
+						group: "Log selection",
+						name: "First item",
+						commandPalette: false,
+						shortcutsBar: false,
+					},
+				},
+			},
+			{
 				hotkey: "End",
+				callback: selectLastItem,
+				options: {
+					meta: {
+						group: "Log selection",
+						name: "Last item",
+						commandPalette: false,
+						shortcutsBar: false,
+					},
+				},
+			},
+			{
+				hotkey: "Meta+ArrowDown",
 				callback: selectLastItem,
 				options: {
 					meta: {
