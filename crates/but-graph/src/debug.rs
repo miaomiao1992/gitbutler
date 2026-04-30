@@ -414,10 +414,10 @@ fn cutoff_debug_string(condition: Option<CutoffCondition>, hard_limit: bool) -> 
         out.push_str(if hard_limit { "❌" } else { "✂" });
     }
     if condition.contains(CutoffCondition::FirstCommit) {
-        out.push_str("🏁");
+        out.push('🏁');
     }
     if condition.contains(CutoffCondition::ShallowBoundary) {
-        out.push_str("⛰");
+        out.push('⛰');
     }
     out
 }
