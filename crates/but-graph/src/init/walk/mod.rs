@@ -414,10 +414,14 @@ pub fn queue_parents(
     current_sidx: SegmentIndex,
     current_cidx: CommitIndex,
     mut limit: Limit,
+    is_shallow_boundary: bool,
     commit_graph: Option<&gix::commitgraph::Graph>,
     objects: &impl gix::objs::Find,
     buf: &mut Vec<u8>,
 ) -> anyhow::Result<bool> {
+    if is_shallow_boundary {
+        return Ok(false);
+    }
     if limit.is_exhausted_or_decrement(flags, next) {
         return Ok(false);
     }

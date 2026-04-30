@@ -1,7 +1,8 @@
 use petgraph::Direction;
 
 use crate::{
-    CommitFlags, CommitIndex, Graph, SegmentIndex, SegmentMetadata, init::types::TopoWalk,
+    CommitFlags, CommitIndex, CutoffCondition, Graph, SegmentIndex, SegmentMetadata,
+    init::types::TopoWalk,
 };
 
 impl Graph {
@@ -128,14 +129,10 @@ impl Graph {
         }
 
         for sidx in self.inner.node_indices() {
-            *commits_at_cutoff += usize::from(self[sidx].commits.last().is_some_and(|c| {
-                !c.parent_ids.is_empty()
-                    && self
-                        .inner
-                        .edges_directed(sidx, Direction::Outgoing)
-                        .next()
-                        .is_none()
-            }));
+            *commits_at_cutoff +=
+                usize::from(self.traversal_condition(sidx).is_some_and(|condition| {
+                    condition.intersects(CutoffCondition::Limit | CutoffCondition::ShallowBoundary)
+                }));
         }
         out
     }

@@ -99,6 +99,21 @@ impl std::fmt::Debug for Commit {
 }
 
 bitflags! {
+    /// The reason a segment stops without an outgoing graph edge.
+    ///
+    /// Multiple flags can be present at once if multiple conditions apply to the same commit.
+    #[derive(Default, Debug, Copy, Clone, Eq, PartialEq)]
+    pub struct CutoffCondition: u8 {
+        /// Traversal stopped before following parents due to configured traversal limits.
+        const Limit = 1 << 0;
+        /// Traversal reached the first commit in history, which has no parents.
+        const FirstCommit = 1 << 1;
+        /// Traversal reached a Git shallow boundary.
+        const ShallowBoundary = 1 << 2;
+    }
+}
+
+bitflags! {
     /// Flags used temporarily during merge-base computation on segments.
     ///
     /// These flags are cleared before each merge-base computation and should not be persisted.
@@ -137,6 +152,8 @@ bitflags! {
         /// Note that when multiple workspaces are included in the traversal, this flag is set by
         /// any of many target branches.
         const Integrated = 1 << 2;
+        /// The commit is listed in the repository's shallow boundary file.
+        const ShallowBoundary = 1 << 3;
     }
 }
 
@@ -164,6 +181,7 @@ impl CommitFlags {
                 .replace("NotInRemote", "⌂")
                 .replace("InWorkspace", "🏘")
                 .replace("Integrated", "✓")
+                .replace("ShallowBoundary", "⛰")
                 .replace(" ", "");
             if extra != 0 {
                 out.push_str(&format!(

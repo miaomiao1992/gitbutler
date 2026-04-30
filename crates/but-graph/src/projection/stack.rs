@@ -6,7 +6,7 @@ use but_core::{ref_metadata, ref_metadata::StackId};
 use gix::prelude::ObjectIdExt;
 use petgraph::Direction;
 
-use crate::{CommitFlags, Graph, SegmentIndex, SegmentMetadata, init::PetGraph};
+use crate::{CommitFlags, CutoffCondition, Graph, SegmentIndex, SegmentMetadata, init::PetGraph};
 
 /// A list of segments that together represent a list of dependent branches, stacked on top of each other.
 #[derive(Clone)]
@@ -331,10 +331,12 @@ impl StackSegment {
             is_first = false;
         }
         // The last (actual) segment could be partial.
-        if let Some(commits) = commits_by_segment
-            .last_mut()
-            .and_then(|(sidx, commits)| graph.is_early_end_of_traversal(*sidx).then_some(commits))
-            && let Some(commit) = commits.last_mut()
+        if let Some(commits) = commits_by_segment.last_mut().and_then(|(sidx, commits)| {
+            graph
+                .traversal_condition(*sidx)
+                .is_some_and(|condition| condition.contains(CutoffCondition::Limit))
+                .then_some(commits)
+        }) && let Some(commit) = commits.last_mut()
         {
             commit.flags |= StackCommitFlags::EarlyEnd;
         }
