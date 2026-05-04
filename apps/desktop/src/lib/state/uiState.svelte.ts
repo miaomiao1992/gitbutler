@@ -4,6 +4,7 @@ import { reactive } from "@gitbutler/shared/reactiveUtils.svelte";
 import { type Reactive } from "@gitbutler/shared/storeUtils";
 import { createEntityAdapter, createSlice, type EntityState } from "@reduxjs/toolkit";
 import type { AppDispatch } from "$lib/state/clientState.svelte";
+import type { ScrollbarVisilitySettings } from "@gitbutler/ui";
 
 // These types are defined here to avoid circular imports with feature modules.
 // Feature modules (codegen, settings, stacks) import these types from here.
@@ -148,6 +149,8 @@ export type AutoCommitModalState = BaseGlobalModalState & {
 	projectId: string;
 };
 
+export type AppTheme = "system" | "light" | "dark";
+
 export type GlobalModalState =
 	| CommitFailedModalState
 	| AuthorMissingModalState
@@ -155,6 +158,17 @@ export type GlobalModalState =
 	| ProjectSettingsModalState
 	| LoginConfirmationModalState
 	| AutoCommitModalState;
+
+export type CodeEditorSettings = {
+	schemeIdentifer: string;
+	displayName: string;
+};
+
+export type TerminalSettings = {
+	identifier: string;
+	displayName: string;
+	platform: "macos" | "windows" | "linux";
+};
 
 export type GlobalUiState = {
 	drawerHeight: number;
@@ -180,6 +194,35 @@ export type GlobalUiState = {
 	channel: string | undefined;
 	draftBranchName: string | undefined;
 	modal: GlobalModalState | undefined;
+	// User settings (migrated from userSettings.ts)
+	aiSummariesEnabled: boolean;
+	bottomPanelExpanded: boolean;
+	bottomPanelHeight: number;
+	peekTrayWidth: number;
+	theme: AppTheme;
+	trayWidth: number;
+	stashedBranchesHeight: number;
+	defaultLaneWidth: number;
+	defaultFileWidth: number;
+	defaultTreeHeight: number;
+	zoom: number;
+	scrollbarVisibilityState: ScrollbarVisilitySettings;
+	tabSize: number;
+	wrapText: boolean;
+	diffFont: string;
+	diffLigatures: boolean;
+	inlineUnifiedDiffs: boolean;
+	strongContrast: boolean;
+	colorBlindFriendly: boolean;
+	defaultCodeEditor: CodeEditorSettings;
+	defaultTerminal: TerminalSettings;
+	defaultFileListMode: "tree" | "list";
+	pathFirst: boolean;
+	allInOneDiff: boolean;
+	highlightDiffs: boolean;
+	svgAsImage: boolean;
+	syntaxThemeLight: string;
+	syntaxThemeDark: string;
 };
 
 export const UI_STATE = new InjectionToken<UiState>("UiState");
@@ -241,7 +284,52 @@ export class UiState {
 		channel: undefined,
 		draftBranchName: undefined,
 		modal: undefined,
+		// User settings defaults
+		aiSummariesEnabled: false,
+		bottomPanelExpanded: false,
+		bottomPanelHeight: 200,
+		peekTrayWidth: 480,
+		theme: "system",
+		trayWidth: 320,
+		stashedBranchesHeight: 150,
+		defaultLaneWidth: 460,
+		defaultFileWidth: 460,
+		defaultTreeHeight: 100,
+		zoom: 1,
+		scrollbarVisibilityState: "scroll",
+		tabSize: 4,
+		wrapText: false,
+		diffFont: "Geist Mono, Menlo, monospace",
+		diffLigatures: false,
+		inlineUnifiedDiffs: false,
+		strongContrast: false,
+		colorBlindFriendly: false,
+		defaultCodeEditor: { schemeIdentifer: "vscode", displayName: "VSCode" },
+		defaultTerminal: { identifier: "terminal", displayName: "Terminal", platform: "macos" },
+		defaultFileListMode: "list",
+		pathFirst: true,
+		allInOneDiff: false,
+		highlightDiffs: false,
+		svgAsImage: true,
+		syntaxThemeLight: "github-light",
+		syntaxThemeDark: "github-dark",
 	});
+
+	/**
+	 * Returns a snapshot of current values for the given global property keys.
+	 * Useful for spreading into component props: `{...uiState.pick('tabSize', 'wrapText')}`.
+	 * Each `.current` read is tracked by Svelte's reactivity when called in a reactive context.
+	 */
+	pick<K extends keyof GlobalUiState>(...keys: K[]): { [P in K]: GlobalUiState[P] } {
+		const result = {} as { [P in K]: GlobalUiState[P] };
+		for (const key of keys) {
+			Object.defineProperty(result, key, {
+				get: () => this.global[key].current,
+				enumerable: true,
+			});
+		}
+		return result;
+	}
 
 	constructor(
 		reactiveState: Reactive<typeof this.state>,
@@ -400,6 +488,60 @@ export type WritableReactive<T> = {
 export type WritableReactiveStore<T extends DefaultConfig> = {
 	[K in keyof T]: WritableReactive<T[K]>;
 };
+
+function defaultTerminalForPlatform(platformName: string): TerminalSettings {
+	switch (platformName) {
+		case "windows":
+			return { identifier: "powershell", displayName: "PowerShell", platform: "windows" };
+		case "linux":
+			return { identifier: "gnome-terminal", displayName: "GNOME Terminal", platform: "linux" };
+		default:
+			return { identifier: "terminal", displayName: "Terminal", platform: "macos" };
+	}
+}
+
+const LEGACY_SETTINGS_KEY = "settings-json";
+
+/**
+ * Initialises user settings in UiState:
+ * 1. Migrates any legacy `settings-json` localStorage data into the Redux-backed store.
+ * 2. Ensures the default terminal matches the current platform (the static
+ *    default is macOS; this corrects it for Windows/Linux on fresh installs).
+ *
+ * Must be called after Redux Persist has rehydrated so that migrated values
+ * are not overwritten.
+ */
+export function initUserSettings(uiState: UiState, platformName: string) {
+	const raw = localStorage.getItem(LEGACY_SETTINGS_KEY);
+	if (raw) {
+		try {
+			const obj = JSON.parse(raw) as Record<string, unknown>;
+			const g = uiState.global;
+			for (const [key, value] of Object.entries(obj)) {
+				if (!Object.prototype.hasOwnProperty.call(g, key)) continue;
+				const prop = g[key as keyof typeof g];
+				if (prop && value != null) {
+					(prop as WritableReactive<UiStateValue>).set(value as UiStateValue);
+				}
+			}
+			localStorage.removeItem(LEGACY_SETTINGS_KEY);
+		} catch {
+			// Corrupted data – just remove it.
+			localStorage.removeItem(LEGACY_SETTINGS_KEY);
+		}
+	}
+
+	// Ensure the terminal default matches the platform. The static default
+	// is macOS; on Windows/Linux (or after migration that didn't include a
+	// terminal) this resolves to the correct platform terminal.
+	const DESKTOP_PLATFORMS = ["macos", "windows", "linux"];
+	if (DESKTOP_PLATFORMS.includes(platformName)) {
+		const terminal = uiState.global.defaultTerminal.current as TerminalSettings | null;
+		if (terminal?.platform !== platformName) {
+			uiState.global.defaultTerminal.set(defaultTerminalForPlatform(platformName));
+		}
+	}
+}
 
 /**
  * Sets the `stackBusy` state while running `fn`, and clears it afterwards.

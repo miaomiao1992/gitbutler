@@ -20,7 +20,7 @@
 	import { FILE_SELECTION_MANAGER } from "$lib/selection/fileSelectionManager.svelte";
 	import { type SelectionId } from "$lib/selection/key";
 	import { ScrollSelectionLock } from "$lib/selection/scrollSelectionLock.svelte";
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { Button, FileViewHeader, HunkDiffSkeleton, VirtualList } from "@gitbutler/ui";
 	import { untrack } from "svelte";
@@ -56,10 +56,10 @@
 
 	const diffService = inject(DIFF_SERVICE);
 	const idSelection = inject(FILE_SELECTION_MANAGER);
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 
-	const allInOneDiff = $derived($userSettings.allInOneDiff);
-	const highlightDiffs = $derived($userSettings.highlightDiffs);
+	const allInOneDiff = $derived(uiState.global.allInOneDiff.current);
+	const highlightDiffs = $derived(uiState.global.highlightDiffs.current);
 
 	// Not reactive by design — feeds `defaultCollapsed` as an initial value only,
 	// so Svelte does not need to track mutations. Persists across VirtualList recycles.

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { ScrollableContainer, type ScrollableProps } from "@gitbutler/ui";
 
@@ -9,7 +9,7 @@
 		...restProps
 	}: ScrollableProps = $props();
 
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 	let scrollableContainer: ScrollableContainer;
 
 	// Export method to scroll to bottom
@@ -31,6 +31,6 @@
 	bind:this={scrollableContainer}
 	bind:viewport
 	bind:viewportHeight
-	whenToShow={$userSettings.scrollbarVisibilityState}
+	whenToShow={uiState.global.scrollbarVisibilityState.current}
 	{...restProps}
 />

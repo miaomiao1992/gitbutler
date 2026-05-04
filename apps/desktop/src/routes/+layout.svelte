@@ -26,6 +26,7 @@
 	import { createKeybind } from "$lib/shortcuts/hotkeys";
 	import { SHORTCUT_SERVICE } from "$lib/shortcuts/shortcutService";
 	import { CLIENT_STATE } from "$lib/state/clientState.svelte";
+	import { initUserSettings, UI_STATE } from "$lib/state/uiState.svelte";
 	import { POSTHOG_WRAPPER } from "$lib/telemetry/posthog";
 	import { USER_SERVICE } from "$lib/user/userService.svelte";
 	import { inject } from "@gitbutler/core/context";
@@ -48,8 +49,11 @@
 
 	const clientState = inject(CLIENT_STATE);
 	const posthog = inject(POSTHOG_WRAPPER);
+	const uiState = inject(UI_STATE);
 
-	clientState.initPersist();
+	clientState.initPersist().then(() => {
+		initUserSettings(uiState, backend.platformName);
+	});
 
 	// =============================================================================
 	// CORE REACTIVE STATE & EFFECTS

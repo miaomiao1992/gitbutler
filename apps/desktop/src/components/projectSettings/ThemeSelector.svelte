@@ -1,15 +1,16 @@
 <script lang="ts">
 	import { Icon } from "@gitbutler/ui";
-	import type { Settings } from "$lib/settings/userSettings";
-	import type { Writable } from "svelte/store";
+	import type { AppTheme, UiState } from "$lib/state/uiState.svelte";
 
 	interface Props {
-		userSettings: Writable<Settings>;
+		uiState: UiState;
 	}
 
-	const { userSettings }: Props = $props();
+	const { uiState }: Props = $props();
 
-	const themes = [
+	const currentTheme = $derived(uiState.global.theme.current ?? "system");
+
+	const themes: { name: string; value: AppTheme; preview: string }[] = [
 		{
 			name: "Light",
 			value: "light",
@@ -32,16 +33,16 @@
 	{#each themes as theme}
 		<label
 			class="theme-card"
-			class:selected={theme.value === $userSettings.theme}
+			class:selected={theme.value === currentTheme}
 			for="theme-{theme.value}"
 		>
 			<input
 				class="hidden-input"
 				type="radio"
 				id="theme-{theme.value}"
-				value={$userSettings.theme || "system"}
-				checked={theme.value === $userSettings.theme}
-				onchange={() => userSettings.update((s) => ({ ...s, theme: theme.value }))}
+				value={theme.value}
+				checked={theme.value === currentTheme}
+				onchange={() => uiState.global.theme.set(theme.value)}
 			/>
 			<div class="theme-card__preview">
 				<i class="theme-card__icon"

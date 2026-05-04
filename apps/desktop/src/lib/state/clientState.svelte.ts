@@ -116,8 +116,10 @@ export class ClientState {
 		);
 	}
 
-	initPersist() {
-		persistStore(this.store);
+	initPersist(): Promise<void> {
+		return new Promise<void>((resolve) => {
+			persistStore(this.store, undefined, () => resolve());
+		});
 	}
 
 	/**

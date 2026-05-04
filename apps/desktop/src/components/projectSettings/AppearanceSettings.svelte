@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ThemeSelector from "$components/projectSettings/ThemeSelector.svelte";
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import {
 		CardGroup,
@@ -12,13 +12,29 @@
 		Toggle,
 	} from "@gitbutler/ui";
 	import { LIGHT_THEMES, DARK_THEMES, setSyntaxThemes } from "@gitbutler/ui/utils/shikiHighlighter";
-	import type { ScrollbarVisilitySettings } from "@gitbutler/ui/components/scroll/Scrollbar.svelte";
+	import type { ScrollbarVisilitySettings } from "@gitbutler/ui";
 
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
+
+	const pathFirst = uiState.global.pathFirst;
+	const allInOneDiff = uiState.global.allInOneDiff;
+	const highlightDiffs = uiState.global.highlightDiffs;
+	const syntaxThemeLight = uiState.global.syntaxThemeLight;
+	const syntaxThemeDark = uiState.global.syntaxThemeDark;
+	const tabSize = uiState.global.tabSize;
+	const diffLigatures = uiState.global.diffLigatures;
+	const wrapText = uiState.global.wrapText;
+	const diffFont = uiState.global.diffFont;
+	const strongContrast = uiState.global.strongContrast;
+	const colorBlindFriendly = uiState.global.colorBlindFriendly;
+	const inlineUnifiedDiffs = uiState.global.inlineUnifiedDiffs;
+	const svgAsImage = uiState.global.svgAsImage;
+	const scrollbarVisibilityState = uiState.global.scrollbarVisibilityState;
+	const defaultFileListMode = uiState.global.defaultFileListMode;
 
 	// Sync persisted syntax theme settings to the shiki highlighter.
 	$effect(() => {
-		setSyntaxThemes($userSettings.syntaxThemeLight, $userSettings.syntaxThemeDark);
+		setSyntaxThemes(syntaxThemeLight.current, syntaxThemeDark.current);
 	});
 	const diff = `@@ -56,10 +56,10 @@
 			// Diff example
@@ -39,10 +55,7 @@
 			"scrollBarVisibilityType",
 		) as ScrollbarVisilitySettings;
 
-		userSettings.update((s) => ({
-			...s,
-			scrollbarVisibilityState: selectedScrollbarVisibility,
-		}));
+		scrollbarVisibilityState.set(selectedScrollbarVisibility);
 	}
 </script>
 
@@ -50,7 +63,7 @@
 	{#snippet title()}
 		Theme
 	{/snippet}
-	<ThemeSelector {userSettings} />
+	<ThemeSelector {uiState} />
 </CardGroup.Item>
 
 <CardGroup.Item alignment="center" standalone>
@@ -63,20 +76,17 @@
 	{#snippet actions()}
 		<Select
 			maxWidth={120}
-			value={$userSettings.defaultFileListMode}
+			value={defaultFileListMode.current}
 			options={[
 				{ label: "List view", value: "list" },
 				{ label: "Tree view", value: "tree" },
 			]}
 			onselect={(value) => {
-				userSettings.update((s) => ({
-					...s,
-					defaultFileListMode: value as "tree" | "list",
-				}));
+				defaultFileListMode.set(value as "tree" | "list");
 			}}
 		>
 			{#snippet itemSnippet({ item, highlighted })}
-				<SelectItem selected={item.value === $userSettings.defaultFileListMode} {highlighted}>
+				<SelectItem selected={item.value === defaultFileListMode.current} {highlighted}>
 					{item.label}
 				</SelectItem>
 			{/snippet}
@@ -94,12 +104,9 @@
 	{#snippet actions()}
 		<Toggle
 			id="pathFirst"
-			checked={$userSettings.pathFirst}
+			checked={pathFirst.current}
 			onclick={() => {
-				userSettings.update((s) => ({
-					...s,
-					pathFirst: !s.pathFirst,
-				}));
+				pathFirst.set(!pathFirst.current);
 			}}
 		/>
 	{/snippet}
@@ -116,18 +123,15 @@
 		{#snippet actions()}
 			<Toggle
 				id="allInOneDiff"
-				checked={$userSettings.allInOneDiff}
+				checked={allInOneDiff.current}
 				onclick={() => {
-					userSettings.update((s) => ({
-						...s,
-						allInOneDiff: !s.allInOneDiff,
-					}));
+					allInOneDiff.set(!allInOneDiff.current);
 				}}
 			/>
 		{/snippet}
 	</CardGroup.Item>
 
-	{#if $userSettings.allInOneDiff}
+	{#if allInOneDiff.current}
 		<CardGroup.Item labelFor="highlightDiffs">
 			{#snippet title()}
 				Highlight active diff
@@ -138,12 +142,9 @@
 			{#snippet actions()}
 				<Toggle
 					id="highlightDiffs"
-					checked={$userSettings.highlightDiffs}
+					checked={highlightDiffs.current}
 					onclick={() => {
-						userSettings.update((s) => ({
-							...s,
-							highlightDiffs: !s.highlightDiffs,
-						}));
+						highlightDiffs.set(!highlightDiffs.current);
 					}}
 				/>
 			{/snippet}
@@ -159,14 +160,16 @@
 
 		<HunkDiff
 			filePath="test.tsx"
-			tabSize={$userSettings.tabSize}
-			wrapText={$userSettings.wrapText}
-			diffFont={$userSettings.diffFont}
-			diffLigatures={$userSettings.diffLigatures}
-			strongContrast={$userSettings.strongContrast}
-			colorBlindFriendly={$userSettings.colorBlindFriendly}
-			inlineUnifiedDiffs={$userSettings.inlineUnifiedDiffs}
 			hunkStr={diff}
+			{...uiState.pick(
+				"tabSize",
+				"wrapText",
+				"diffFont",
+				"diffLigatures",
+				"strongContrast",
+				"colorBlindFriendly",
+				"inlineUnifiedDiffs",
+			)}
 		/>
 	</CardGroup.Item>
 
@@ -180,17 +183,14 @@
 		{#snippet actions()}
 			<Select
 				maxWidth={200}
-				value={$userSettings.syntaxThemeLight}
+				value={syntaxThemeLight.current}
 				options={LIGHT_THEMES}
 				onselect={(value) => {
-					userSettings.update((s) => ({
-						...s,
-						syntaxThemeLight: value,
-					}));
+					syntaxThemeLight.set(value);
 				}}
 			>
 				{#snippet itemSnippet({ item, highlighted })}
-					<SelectItem selected={item.value === $userSettings.syntaxThemeLight} {highlighted}>
+					<SelectItem selected={item.value === syntaxThemeLight.current} {highlighted}>
 						{item.label}
 					</SelectItem>
 				{/snippet}
@@ -208,17 +208,14 @@
 		{#snippet actions()}
 			<Select
 				maxWidth={200}
-				value={$userSettings.syntaxThemeDark}
+				value={syntaxThemeDark.current}
 				options={DARK_THEMES}
 				onselect={(value) => {
-					userSettings.update((s) => ({
-						...s,
-						syntaxThemeDark: value,
-					}));
+					syntaxThemeDark.set(value);
 				}}
 			>
 				{#snippet itemSnippet({ item, highlighted })}
-					<SelectItem selected={item.value === $userSettings.syntaxThemeDark} {highlighted}>
+					<SelectItem selected={item.value === syntaxThemeDark.current} {highlighted}>
 						{item.label}
 					</SelectItem>
 				{/snippet}
@@ -236,13 +233,10 @@
 
 		<Textbox
 			wide
-			bind:value={$userSettings.diffFont}
+			value={diffFont.current}
 			required
 			onchange={(value: string) => {
-				userSettings.update((s) => ({
-					...s,
-					diffFont: value,
-				}));
+				diffFont.set(value);
 			}}
 		/>
 	</CardGroup.Item>
@@ -254,12 +248,9 @@
 		{#snippet actions()}
 			<Toggle
 				id="allowDiffLigatures"
-				checked={$userSettings.diffLigatures}
+				checked={diffLigatures.current}
 				onclick={() => {
-					userSettings.update((s) => ({
-						...s,
-						diffLigatures: !$userSettings.diffLigatures,
-					}));
+					diffLigatures.set(!diffLigatures.current);
 				}}
 			/>
 		{/snippet}
@@ -278,17 +269,14 @@
 				type="number"
 				width={100}
 				textAlign="center"
-				value={$userSettings.tabSize.toString()}
+				value={tabSize.current.toString()}
 				minVal={1}
 				maxVal={8}
 				showCountActions
 				onchange={(value: string) => {
-					userSettings.update((s) => ({
-						...s,
-						tabSize: parseInt(value) || $userSettings.tabSize,
-					}));
+					tabSize.set(parseInt(value) || tabSize.current);
 				}}
-				placeholder={$userSettings.tabSize.toString()}
+				placeholder={tabSize.current.toString()}
 			/>
 		{/snippet}
 	</CardGroup.Item>
@@ -304,12 +292,9 @@
 		{#snippet actions()}
 			<Toggle
 				id="wrapText"
-				checked={$userSettings.wrapText}
+				checked={wrapText.current}
 				onclick={() => {
-					userSettings.update((s) => ({
-						...s,
-						wrapText: !s.wrapText,
-					}));
+					wrapText.set(!wrapText.current);
 				}}
 			/>
 		{/snippet}
@@ -325,12 +310,9 @@
 		{#snippet actions()}
 			<Toggle
 				id="strongContrast"
-				checked={$userSettings.strongContrast}
+				checked={strongContrast.current}
 				onclick={() => {
-					userSettings.update((s) => ({
-						...s,
-						strongContrast: !s.strongContrast,
-					}));
+					strongContrast.set(!strongContrast.current);
 				}}
 			/>
 		{/snippet}
@@ -348,12 +330,9 @@
 		{#snippet actions()}
 			<Toggle
 				id="colorBlindFriendly"
-				checked={$userSettings.colorBlindFriendly}
+				checked={colorBlindFriendly.current}
 				onclick={() => {
-					userSettings.update((s) => ({
-						...s,
-						colorBlindFriendly: !s.colorBlindFriendly,
-					}));
+					colorBlindFriendly.set(!colorBlindFriendly.current);
 				}}
 			/>
 		{/snippet}
@@ -370,12 +349,9 @@
 		{#snippet actions()}
 			<Toggle
 				id="inlineUnifiedDiffs"
-				checked={$userSettings.inlineUnifiedDiffs}
+				checked={inlineUnifiedDiffs.current}
 				onclick={() => {
-					userSettings.update((s) => ({
-						...s,
-						inlineUnifiedDiffs: !s.inlineUnifiedDiffs,
-					}));
+					inlineUnifiedDiffs.set(!inlineUnifiedDiffs.current);
 				}}
 			/>
 		{/snippet}
@@ -391,12 +367,9 @@
 		{#snippet actions()}
 			<Toggle
 				id="svgAsImage"
-				checked={$userSettings.svgAsImage}
+				checked={svgAsImage.current}
 				onclick={() => {
-					userSettings.update((s) => ({
-						...s,
-						svgAsImage: !s.svgAsImage,
-					}));
+					svgAsImage.set(!svgAsImage.current);
 				}}
 			/>
 		{/snippet}
@@ -417,7 +390,7 @@
 					name="scrollBarVisibilityType"
 					value="scroll"
 					id="scrollbar-on-scroll"
-					checked={$userSettings.scrollbarVisibilityState === "scroll"}
+					checked={scrollbarVisibilityState.current === "scroll"}
 				/>
 			{/snippet}
 		</CardGroup.Item>
@@ -434,7 +407,7 @@
 					name="scrollBarVisibilityType"
 					value="hover"
 					id="scrollbar-on-hover"
-					checked={$userSettings.scrollbarVisibilityState === "hover"}
+					checked={scrollbarVisibilityState.current === "hover"}
 				/>
 			{/snippet}
 		</CardGroup.Item>
@@ -448,7 +421,7 @@
 					name="scrollBarVisibilityType"
 					value="always"
 					id="scrollbar-always"
-					checked={$userSettings.scrollbarVisibilityState === "always"}
+					checked={scrollbarVisibilityState.current === "always"}
 				/>
 			{/snippet}
 		</CardGroup.Item>

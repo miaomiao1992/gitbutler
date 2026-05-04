@@ -1,18 +1,20 @@
-import { type Writable } from "svelte/store";
 import type { IBackend } from "$lib/backend";
-import type { Settings } from "$lib/settings/userSettings";
+import type { UiState } from "$lib/state/uiState.svelte";
 
 let systemTheme: string | null;
 let selectedTheme: string | undefined;
 
-export function initTheme(userSettings: Writable<Settings>, backend: IBackend) {
+export function initTheme(uiState: UiState, backend: IBackend) {
 	backend.systemTheme.subscribe((theme) => {
 		systemTheme = theme;
 		updateDom();
 	});
-	userSettings.subscribe((s) => {
-		selectedTheme = s.theme;
-		updateDom();
+	// $effect.root is needed because initTheme runs outside a component context.
+	$effect.root(() => {
+		$effect(() => {
+			selectedTheme = uiState.global.theme.current;
+			updateDom();
+		});
 	});
 }
 

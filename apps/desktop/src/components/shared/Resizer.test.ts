@@ -1,14 +1,21 @@
 import Resizer from "$components/shared/Resizer.svelte";
 import { RESIZE_SYNC, ResizeSync } from "$lib/floating/resizeSync";
 import { SASH_LAYER, type SashLayerContext } from "$lib/sash/sashLayer";
-import { SETTINGS } from "$lib/settings/userSettings";
+import { UI_STATE } from "$lib/state/uiState.svelte";
 import { render, waitFor } from "@testing-library/svelte";
-import { writable } from "svelte/store";
 import { describe, expect, test, vi } from "vitest";
+
+function mockUiState() {
+	return {
+		global: {
+			zoom: { current: 1, set: vi.fn() },
+		},
+	};
+}
 
 function baseContext(): Map<any, any> {
 	return new Map<any, any>([
-		[SETTINGS._key, writable({ zoom: 1 } as any)],
+		[UI_STATE._key, mockUiState()],
 		[RESIZE_SYNC._key, new ResizeSync()],
 	]);
 }

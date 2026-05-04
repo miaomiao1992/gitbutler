@@ -3,7 +3,7 @@
 	import { commitCreatedAtDate } from "$lib/branches/v3";
 	import { splitMessage } from "$lib/commits/commitMessage";
 	import { rewrapCommitMessage } from "$lib/config/uiFeatureFlags";
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { useUserAvatarUrl } from "$lib/user/userAvatar.svelte";
 	import { rejoinParagraphs, truncate } from "$lib/utils/string";
 	import { inject } from "@gitbutler/core/context";
@@ -20,10 +20,10 @@
 
 	const { commit, rewrap, includeTitle }: Props = $props();
 
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 	const clipboardService = inject(CLIPBOARD_SERVICE);
 	const userAvatarUrl = useUserAvatarUrl();
-	const zoom = $derived($userSettings.zoom);
+	const zoom = $derived(uiState.global.zoom.current);
 
 	let messageWidth = $state(0);
 	const messageWidthRem = $derived(pxToRem(messageWidth, zoom));

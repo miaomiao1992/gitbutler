@@ -19,7 +19,7 @@
 	import { editPatch } from "$lib/mode/editPatchUtils";
 	import { MODE_SERVICE } from "$lib/mode/modeService";
 	import { getFileListContext } from "$lib/selection/fileListController.svelte";
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { injectOptional, inject } from "@gitbutler/core/context";
 	import { AsyncButton, FileListItem, TestId } from "@gitbutler/ui";
 	import type { ConflictEntriesObj } from "$lib/files/conflicts";
@@ -37,7 +37,7 @@
 
 	const controller = getFileListContext();
 	const modeService = injectOptional(MODE_SERVICE, undefined);
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 
 	let editPatchModal: EditPatchConfirmModal | undefined = $state();
 	let selectedFilePath = $state("");
@@ -81,7 +81,7 @@
 			<FileListItem
 				{draggable}
 				filePath={path}
-				pathFirst={$userSettings.pathFirst}
+				pathFirst={uiState.global.pathFirst.current}
 				active={controller.active}
 				conflicted
 				conflictHint={conflictEntryHint(kind)}

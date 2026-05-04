@@ -15,7 +15,6 @@
 		projectCommitGenerationUseEmojis,
 	} from "$lib/config/config";
 	import { showError } from "$lib/error/showError";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { uploadFiles } from "@gitbutler/shared/dom";
@@ -91,7 +90,6 @@
 	const uiState = inject(UI_STATE);
 
 	const uploadsService = inject(UPLOADS_SERVICE);
-	const userSettings = inject(SETTINGS);
 	const commitGenerationExtraConcise = projectCommitGenerationExtraConcise(
 		untrack(() => projectId),
 	);
@@ -99,6 +97,9 @@
 	const commitGenerationHaiku = projectCommitGenerationHaiku(untrack(() => projectId));
 
 	const useFloatingBox = uiState.global.useFloatingBox;
+	const diffFont = uiState.global.diffFont;
+	const tabSize = uiState.global.tabSize;
+	const diffLigatures = uiState.global.diffLigatures;
 
 	const rulerCountValue = uiState.global.rulerCountValue;
 
@@ -323,7 +324,7 @@
 			}}
 		>
 			{#if useRuler && enableRuler}
-				<MessageEditorRuler monospaceFont={$userSettings.diffFont} />
+				<MessageEditorRuler monospaceFont={diffFont.current} />
 			{/if}
 
 			<div class="message-textarea__wrapper">
@@ -339,9 +340,9 @@
 					onKeyDown={handleKeyDown}
 					{disabled}
 					useMonospaceFont={useRuler && !forceSansFont}
-					monospaceFont={$userSettings.diffFont}
-					tabSize={$userSettings.tabSize}
-					enableLigatures={$userSettings.diffLigatures}
+					monospaceFont={diffFont.current}
+					tabSize={tabSize.current}
+					enableLigatures={diffLigatures.current}
 					autoFocus={false}
 				>
 					{#snippet plugins()}

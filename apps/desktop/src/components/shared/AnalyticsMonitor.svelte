@@ -5,7 +5,6 @@ attached to posthog events.
 -->
 <script lang="ts">
 	import { SETTINGS_SERVICE } from "$lib/settings/appSettings";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { EVENT_CONTEXT } from "$lib/telemetry/eventContext";
 	import { inject } from "@gitbutler/core/context";
@@ -18,8 +17,6 @@ attached to posthog events.
 
 	const globalState = uiState.global;
 	const projectState = $derived(uiState.project(projectId));
-
-	const settings = inject(SETTINGS);
 
 	$effect(() => {
 		eventContext.update({
@@ -36,12 +33,12 @@ attached to posthog events.
 
 	$effect(() => {
 		eventContext.update({
-			zoom: $settings.zoom,
-			theme: $settings.theme,
-			tabSize: $settings.tabSize,
-			defaultCodeEditor: $settings.defaultCodeEditor.schemeIdentifer,
-			aiSummariesEnabled: $settings.aiSummariesEnabled,
-			diffLigatures: $settings.diffLigatures,
+			zoom: globalState.zoom.current,
+			theme: globalState.theme.current,
+			tabSize: globalState.tabSize.current,
+			defaultCodeEditor: globalState.defaultCodeEditor.current.schemeIdentifer,
+			aiSummariesEnabled: globalState.aiSummariesEnabled.current,
+			diffLigatures: globalState.diffLigatures.current,
 		});
 	});
 

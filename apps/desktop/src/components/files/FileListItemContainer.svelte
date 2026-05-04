@@ -10,9 +10,9 @@
 	import { FILE_SELECTION_MANAGER } from "$lib/selection/fileSelectionManager.svelte";
 	import { key, type SelectionId } from "$lib/selection/key";
 	import { UNCOMMITTED_SERVICE } from "$lib/selection/uncommittedService.svelte";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { getStackName } from "$lib/stacks/stack";
 	import { STACK_SERVICE } from "$lib/stacks/stackService.svelte";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { FileListItem, TestId } from "@gitbutler/ui";
 	import { DRAG_STATE_SERVICE } from "@gitbutler/ui/drag/dragStateService.svelte";
@@ -74,7 +74,7 @@
 	const dropzoneRegistry = inject(DROPZONE_REGISTRY);
 	const dragStateService = inject(DRAG_STATE_SERVICE);
 	const stackService = inject(STACK_SERVICE);
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 
 	let contextMenu = $state<ReturnType<typeof ChangedFilesContextMenu>>();
 	let draggableEl: HTMLDivElement | undefined = $state();
@@ -177,7 +177,7 @@
 		{selected}
 		{showCheckbox}
 		fileStatusTooltip={previousTooltipText}
-		pathFirst={$userSettings.pathFirst}
+		pathFirst={uiState.global.pathFirst.current}
 		{listMode}
 		checked={checkStatus.current === "checked" || checkStatus.current === "indeterminate"}
 		{active}

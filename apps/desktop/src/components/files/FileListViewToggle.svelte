@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { persisted } from "@gitbutler/shared/persisted";
 	import { SegmentControl, TestId } from "@gitbutler/ui";
@@ -12,13 +12,13 @@
 
 	let { persistId, mode = $bindable() }: Props = $props();
 
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 	const saved = $derived(persisted<Mode | undefined>(undefined, `file-list-mode-${persistId}`));
 
 	// Subscribe to the saved store and update mode
 	$effect(() => {
 		return saved.subscribe((value) => {
-			mode = value ?? $userSettings.defaultFileListMode;
+			mode = value ?? uiState.global.defaultFileListMode.current;
 		});
 	});
 </script>

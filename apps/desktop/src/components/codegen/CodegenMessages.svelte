@@ -33,8 +33,13 @@
 
 	import { RULES_SERVICE } from "$lib/rules/rulesService.svelte";
 	import { SETTINGS_SERVICE } from "$lib/settings/appSettings";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { getStackContext } from "$lib/stacks/stackController.svelte";
+	import {
+		UI_STATE,
+		type ThinkingLevel,
+		type ModelType,
+		type PermissionMode,
+	} from "$lib/state/uiState.svelte";
 	import { formatCompactNumber } from "$lib/utils/number";
 	import { inject } from "@gitbutler/core/context";
 	import { reactive } from "@gitbutler/shared/reactiveUtils.svelte";
@@ -54,7 +59,6 @@
 	import VirtualList from "@gitbutler/ui/components/VirtualList.svelte";
 	import { focusable } from "@gitbutler/ui/focus/focusable";
 	import type { PermissionDecision } from "$lib/codegen/types";
-	import type { ThinkingLevel, ModelType, PermissionMode } from "$lib/state/uiState.svelte";
 
 	type Props = {
 		hasRulesToClear?: boolean;
@@ -73,7 +77,7 @@
 	const claudeCodeService = inject(CLAUDE_CODE_SERVICE);
 	const rulesService = inject(RULES_SERVICE);
 	const urlService = inject(URL_SERVICE);
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 	const settingsService = inject(SETTINGS_SERVICE);
 	const attachmentService = inject(ATTACHMENT_SERVICE);
 	const claudeSettings = $derived($settingsService?.claude);
@@ -145,7 +149,7 @@
 		await claudeCodeService.createPromptDir({ projectId, path });
 
 		const editorUri = getEditorUri({
-			schemeId: $userSettings.defaultCodeEditor.schemeIdentifer,
+			schemeId: uiState.global.defaultCodeEditor.current.schemeIdentifer,
 			path: [path],
 			searchParams: { windowId: "_blank" },
 		});
@@ -531,7 +535,7 @@
 							stickToBottom
 							showBottomButton
 							items={messagesForList}
-							visibility={$userSettings.scrollbarVisibilityState}
+							visibility={uiState.global.scrollbarVisibilityState.current}
 							padding={{ left: 20, right: 20, top: 12, bottom: 12 }}
 							defaultHeight={65}
 							getId={(item) => item.createdAt}

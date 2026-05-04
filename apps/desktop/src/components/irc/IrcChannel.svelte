@@ -7,7 +7,6 @@
 	import { IRC_API_SERVICE, IRC_CONNECTION_ID } from "$lib/irc/ircApiService";
 	import { vscodePath } from "$lib/project/project";
 	import { PROJECTS_SERVICE } from "$lib/project/projectsService";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import {
@@ -33,8 +32,8 @@
 
 	const ircApiService = inject(IRC_API_SERVICE);
 	const uiState = inject(UI_STATE);
+	const defaultCodeEditor = uiState.global.defaultCodeEditor;
 	const backend = inject(BACKEND);
-	const userSettings = inject(SETTINGS);
 	const projectService = inject(PROJECTS_SERVICE);
 	const urlService = inject(URL_SERVICE);
 
@@ -80,7 +79,7 @@
 		return all.filter((nick) => !channelNicks.has(nick));
 	});
 
-	const editorName = $derived($userSettings.defaultCodeEditor.displayName);
+	const editorName = $derived(defaultCodeEditor.current.displayName);
 
 	// ── Auto-join ────────────────────────────────────────────────────────
 
@@ -236,7 +235,7 @@
 		const project = await projectService.fetchProject(props.projectId);
 		if (!project?.path) return;
 		const uri = getEditorUri({
-			schemeId: $userSettings.defaultCodeEditor.schemeIdentifer,
+			schemeId: defaultCodeEditor.current.schemeIdentifer,
 			path: [vscodePath(project.path), filePath],
 			line: lineNumber,
 		});

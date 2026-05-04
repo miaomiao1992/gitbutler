@@ -16,7 +16,6 @@
 	import { vscodePath } from "$lib/project/project";
 	import { PROJECTS_SERVICE } from "$lib/project/projectsService";
 	import { FILE_SELECTION_MANAGER } from "$lib/selection/fileSelectionManager.svelte";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { STACK_SERVICE } from "$lib/stacks/stackService.svelte";
 	import { UI_STATE, withStackBusy } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
@@ -80,6 +79,7 @@
 	}: Props = $props();
 	const stackService = inject(STACK_SERVICE);
 	const uiState = inject(UI_STATE);
+	const defaultCodeEditor = uiState.global.defaultCodeEditor;
 	const idSelection = inject(FILE_SELECTION_MANAGER);
 	const aiService = inject(AI_SERVICE);
 	const actionService = inject(ACTION_SERVICE);
@@ -95,7 +95,6 @@
 
 	const projectService = inject(PROJECTS_SERVICE);
 
-	const userSettings = inject(SETTINGS);
 	const isUncommitted = $derived(selectionId.type === "worktree");
 	const isBranchFiles = $derived(selectionId.type === "branch");
 	const selectionBranchName = $derived(
@@ -449,7 +448,7 @@
 			<ContextMenuSection>
 				{#if !isChangedFolderItem(item)}
 					<ContextMenuItem
-						label="Open in {$userSettings.defaultCodeEditor.displayName}"
+						label="Open in {defaultCodeEditor.current.displayName}"
 						icon="open-in-ide"
 						disabled={deletion}
 						onclick={async () => {
@@ -460,7 +459,7 @@
 								if (projectPath) {
 									for (let change of item.changes) {
 										const path = getEditorUri({
-											schemeId: $userSettings.defaultCodeEditor.schemeIdentifer,
+											schemeId: defaultCodeEditor.current.schemeIdentifer,
 											path: [vscodePath(projectPath), change.path],
 										});
 										urlService.openExternalUrl(path);

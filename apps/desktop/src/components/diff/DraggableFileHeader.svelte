@@ -7,7 +7,7 @@
 	import { getFilename } from "$lib/files/utils";
 	import { FILE_SELECTION_MANAGER } from "$lib/selection/fileSelectionManager.svelte";
 	import { type SelectionId } from "$lib/selection/key";
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { FileViewHeader, TestId } from "@gitbutler/ui";
 	import { DRAG_STATE_SERVICE } from "@gitbutler/ui/drag/dragStateService.svelte";
@@ -42,7 +42,7 @@
 	const idSelection = inject(FILE_SELECTION_MANAGER);
 	const dropzoneRegistry = inject(DROPZONE_REGISTRY);
 	const dragStateService = inject(DRAG_STATE_SERVICE);
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 
 	let contextMenu = $state<ReturnType<typeof ChangedFilesContextMenu>>();
 	let draggableEl: HTMLDivElement | undefined = $state();
@@ -113,7 +113,7 @@
 		linesRemoved={lineChangesStat?.removed}
 		fileStatusTooltip={previousTooltipText}
 		{executable}
-		pathFirst={$userSettings.pathFirst}
+		pathFirst={uiState.global.pathFirst.current}
 		oncontextmenu={(e) => {
 			e.stopPropagation();
 			e.preventDefault();

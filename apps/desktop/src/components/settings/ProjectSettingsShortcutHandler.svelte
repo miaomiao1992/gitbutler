@@ -8,8 +8,8 @@
 	import { PROJECTS_SERVICE } from "$lib/project/projectsService";
 	import { historyPath } from "$lib/routes/routes.svelte";
 	import { useSettingsModal } from "$lib/settings/settingsModal.svelte";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { SHORTCUT_SERVICE } from "$lib/shortcuts/shortcutService";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { mergeUnlisten } from "@gitbutler/ui/utils/mergeUnlisten";
 
@@ -20,7 +20,7 @@
 	const urlService = inject(URL_SERVICE);
 	const { openProjectSettings } = useSettingsModal();
 
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 	const shortcutService = inject(SHORTCUT_SERVICE);
 	const fileService = inject(FILE_SERVICE);
 
@@ -39,7 +39,7 @@
 				}
 				urlService.openExternalUrl(
 					getEditorUri({
-						schemeId: $userSettings.defaultCodeEditor.schemeIdentifer,
+						schemeId: uiState.global.defaultCodeEditor.current.schemeIdentifer,
 						path: [vscodePath(project.path)],
 						searchParams: { windowId: "_blank" },
 					}),
@@ -62,7 +62,7 @@
 				}
 				try {
 					await backend.invoke("open_in_terminal", {
-						terminalId: $userSettings.defaultTerminal.identifier,
+						terminalId: uiState.global.defaultTerminal.current.identifier,
 						path: project.path,
 					});
 				} catch (err: unknown) {

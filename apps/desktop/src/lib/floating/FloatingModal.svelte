@@ -3,7 +3,7 @@
 	import { DragResizeHandler } from "$lib/floating/dragResizeHandler";
 	import { ResizeCalculator } from "$lib/floating/resizeCalculator";
 	import { SnapPointManager } from "$lib/floating/snapPointManager";
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { getStorageItem, setStorageItem } from "@gitbutler/shared/persisted";
 	import { focusable } from "@gitbutler/ui/focus/focusable";
@@ -55,8 +55,8 @@
 		setStorageItem(`${persistId}-height`, nextHeight);
 	}
 
-	const userSettings = inject(SETTINGS);
-	const zoom = $derived($userSettings.zoom);
+	const uiState = inject(UI_STATE);
+	const zoom = $derived(uiState.global.zoom.current);
 
 	// Margin constants for viewport constraints (in rem; actual px depend on root font size and zoom)
 	const VIEWPORT_MARGIN_REM = 5; // total horizontal margin of 5rem (e.g., 2.5rem on each side)

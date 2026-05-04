@@ -10,10 +10,10 @@
 	import { PROJECTS_SERVICE } from "$lib/project/projectsService";
 	import { SETTINGS_SERVICE } from "$lib/settings/appSettings";
 	import {
-		SETTINGS,
+		UI_STATE,
 		type CodeEditorSettings,
 		type TerminalSettings,
-	} from "$lib/settings/userSettings";
+	} from "$lib/state/uiState.svelte";
 	import { UPDATER_SERVICE } from "$lib/updater/updater";
 	import { USER_SERVICE } from "$lib/user/userService.svelte";
 	import { inject } from "@gitbutler/core/context";
@@ -55,7 +55,10 @@
 
 	let deleteConfirmationModal: ReturnType<typeof Modal> | undefined = $state();
 
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
+	const defaultCodeEditor = uiState.global.defaultCodeEditor;
+	const defaultTerminal = uiState.global.defaultTerminal;
+
 	const editorOptions: CodeEditorSettings[] = [
 		{ schemeIdentifer: "vscodium", displayName: "VSCodium" },
 		{ schemeIdentifer: "vscode", displayName: "VSCode" },
@@ -224,18 +227,18 @@
 		{/snippet}
 		{#snippet actions()}
 			<Select
-				value={$userSettings.defaultCodeEditor.schemeIdentifer}
+				value={defaultCodeEditor.current.schemeIdentifer}
 				options={editorOptionsForSelect}
 				onselect={(value) => {
 					const selected = editorOptions.find((option) => option.schemeIdentifer === value);
 					if (selected) {
-						userSettings.update((s) => ({ ...s, defaultCodeEditor: selected }));
+						defaultCodeEditor.set(selected);
 					}
 				}}
 			>
 				{#snippet itemSnippet({ item, highlighted })}
 					<SelectItem
-						selected={item.value === $userSettings.defaultCodeEditor.schemeIdentifer}
+						selected={item.value === defaultCodeEditor.current.schemeIdentifer}
 						{highlighted}
 					>
 						{item.label}
@@ -251,20 +254,17 @@
 			{/snippet}
 			{#snippet actions()}
 				<Select
-					value={$userSettings.defaultTerminal.identifier}
+					value={defaultTerminal.current.identifier}
 					options={terminalOptionsForSelect}
 					onselect={(value) => {
 						const selected = terminalOptions.find((option) => option.identifier === value);
 						if (selected) {
-							userSettings.update((s) => ({ ...s, defaultTerminal: selected }));
+							defaultTerminal.set(selected);
 						}
 					}}
 				>
 					{#snippet itemSnippet({ item, highlighted })}
-						<SelectItem
-							selected={item.value === $userSettings.defaultTerminal.identifier}
-							{highlighted}
-						>
+						<SelectItem selected={item.value === defaultTerminal.current.identifier} {highlighted}>
 							{item.label}
 						</SelectItem>
 					{/snippet}

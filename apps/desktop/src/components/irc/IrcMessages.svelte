@@ -3,7 +3,7 @@
 	import IrcHunk from "$components/irc/IrcHunk.svelte";
 	import IrcMessageActions from "$components/irc/IrcMessageActions.svelte";
 	import { parseMessageData } from "$lib/irc/protocol";
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import {
 		VirtualList,
@@ -103,7 +103,7 @@
 		}
 	}
 
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 
 	let contextMenuOpen = $state(false);
 	let contextMenuTarget = $state<MouseEvent | HTMLElement>();
@@ -314,7 +314,7 @@
 		onloadmore={onLoadMore ? handleLoadMore : undefined}
 		renderDistance={100}
 		loadMoreThreshold={500}
-		visibility={$userSettings.scrollbarVisibilityState}
+		visibility={uiState.global.scrollbarVisibilityState.current}
 		getId={(group?: MessageGroup) => group?.messages[0]?.msgid}
 	>
 		{#snippet banner()}

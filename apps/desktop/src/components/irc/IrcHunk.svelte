@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { HunkDiff, FileIcon } from "@gitbutler/ui";
 	import type { DiffHunk } from "@gitbutler/but-sdk";
@@ -18,7 +18,7 @@
 
 	const { change, diff, onLineContextMenu }: Props = $props();
 
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 
 	const parts = $derived(change.path.split("/"));
 	const fileName = $derived(parts.at(-1) ?? "");
@@ -39,13 +39,15 @@
 			hideCheckboxes={true}
 			filePath={change.path}
 			hunkStr={diff.diff}
-			diffLigatures={$userSettings.diffLigatures}
-			tabSize={$userSettings.tabSize}
-			wrapText={$userSettings.wrapText}
-			diffFont={$userSettings.diffFont}
-			strongContrast={$userSettings.strongContrast}
-			colorBlindFriendly={$userSettings.colorBlindFriendly}
-			inlineUnifiedDiffs={$userSettings.inlineUnifiedDiffs}
+			{...uiState.pick(
+				"diffLigatures",
+				"tabSize",
+				"wrapText",
+				"diffFont",
+				"strongContrast",
+				"colorBlindFriendly",
+				"inlineUnifiedDiffs",
+			)}
 			handleLineContextMenu={(params) => {
 				onLineContextMenu?.({
 					filePath: change.path,

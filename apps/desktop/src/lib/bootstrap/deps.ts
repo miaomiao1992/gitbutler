@@ -53,7 +53,6 @@ import {
 } from "$lib/selection/fileSelectionManager.svelte";
 import { UncommittedService, UNCOMMITTED_SERVICE } from "$lib/selection/uncommittedService.svelte";
 import { SETTINGS_SERVICE, SettingsService } from "$lib/settings/appSettings";
-import { loadUserSettings, SETTINGS } from "$lib/settings/userSettings";
 import { ShortcutService, SHORTCUT_SERVICE } from "$lib/shortcuts/shortcutService";
 import { StackService, STACK_SERVICE } from "$lib/stacks/stackService.svelte";
 import { ClientState, CLIENT_STATE } from "$lib/state/clientState.svelte";
@@ -108,7 +107,6 @@ export function initDependencies(args: {
 	// FOUNDATION LAYER - Core services that others depend on
 	// ============================================================================
 
-	const userSettings = loadUserSettings(backend.platformName);
 	const appState = new AppState();
 
 	// ============================================================================
@@ -376,7 +374,6 @@ export function initDependencies(args: {
 		[RESIZE_SYNC, resizeSync],
 		[RULES_SERVICE, rulesService],
 		[SECRET_SERVICE, secretsService],
-		[SETTINGS, userSettings],
 		[SETTINGS_SERVICE, settingsService],
 		[SHORTCUT_SERVICE, shortcutService],
 		[STACK_SERVICE, stackService],

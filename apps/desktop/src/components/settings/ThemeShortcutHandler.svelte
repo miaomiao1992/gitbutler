@@ -1,21 +1,19 @@
 <script lang="ts">
 	import { BACKEND } from "$lib/backend";
-	import { initTheme } from "$lib/bootstrap/theme";
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { initTheme } from "$lib/bootstrap/theme.svelte";
 	import { SHORTCUT_SERVICE } from "$lib/shortcuts/shortcutService";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 	const shortcutService = inject(SHORTCUT_SERVICE);
 	const backend = inject(BACKEND);
+	const theme = uiState.global.theme;
 
-	initTheme(userSettings, backend);
+	initTheme(uiState, backend);
 
 	function updateTheme() {
-		userSettings.update((s) => ({
-			...s,
-			theme: s.theme === "light" ? "dark" : "light",
-		}));
+		theme.set(theme.current === "light" ? "dark" : "light");
 	}
 
 	$effect(() => shortcutService.on("switch-theme", () => updateTheme()));

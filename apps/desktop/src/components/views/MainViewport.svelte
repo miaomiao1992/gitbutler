@@ -26,7 +26,6 @@ the window, then enlarge it and retain the original widths of the layout.
 <script lang="ts">
 	import Resizer from "$components/shared/Resizer.svelte";
 	import SashLayer from "$components/shared/SashLayer.svelte";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { focusable } from "@gitbutler/ui/focus/focusable";
@@ -57,10 +56,8 @@ the window, then enlarge it and retain the original widths of the layout.
 	const { testId, name, left, leftWidth, preview, previewWidth, middle, right, rightWidth }: Props =
 		$props();
 
-	const userSettings = inject(SETTINGS);
-	const zoom = $derived($userSettings.zoom);
-
 	const uiState = inject(UI_STATE);
+	const zoom = $derived(uiState.global.zoom.current);
 	const unassignedSidebarFolded = $derived(uiState.global.unassignedSidebarFolded);
 
 	let leftPreferredWidth = $derived(pxToRem(leftWidth.default, zoom));

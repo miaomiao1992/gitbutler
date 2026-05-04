@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { RESIZE_SYNC } from "$lib/floating/resizeSync";
 	import { SASH_LAYER } from "$lib/sash/sashLayer";
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { persistWithExpiration } from "@gitbutler/shared/persisted";
 	import { mergeUnlisten } from "@gitbutler/ui/utils/mergeUnlisten";
@@ -77,9 +77,9 @@
 	}: Props = $props();
 
 	const orientation = $derived(["left", "right"].includes(direction) ? "horizontal" : "vertical");
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 	const resizeSync = inject(RESIZE_SYNC);
-	const zoom = $derived($userSettings.zoom);
+	const zoom = $derived(uiState.global.zoom.current);
 
 	const value = $derived(
 		persistId

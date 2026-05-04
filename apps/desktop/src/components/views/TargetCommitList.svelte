@@ -6,8 +6,8 @@
 	import { BASE_BRANCH_SERVICE } from "$lib/baseBranch/baseBranchService.svelte";
 	import { commitCreatedAt } from "$lib/branches/v3";
 	import { createCommitSelection } from "$lib/selection/key";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { STACK_SERVICE } from "$lib/stacks/stackService.svelte";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { type Commit } from "@gitbutler/but-sdk";
 	import { inject } from "@gitbutler/core/context";
 
@@ -25,7 +25,7 @@
 
 	const baseBranchService = inject(BASE_BRANCH_SERVICE);
 	const stackService = inject(STACK_SERVICE);
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 
 	const baseBranchQuery = $derived(baseBranchService.baseBranch(projectId));
 	const baseSha = $derived(baseBranchQuery.response?.baseSha);
@@ -94,7 +94,7 @@
 					<VirtualList
 						items={commits}
 						defaultHeight={40}
-						visibility={$userSettings.scrollbarVisibilityState}
+						visibility={uiState.global.scrollbarVisibilityState.current}
 						onloadmore={async () => await loadMore()}
 						renderDistance={100}
 						getId={(commit) => commit.id}

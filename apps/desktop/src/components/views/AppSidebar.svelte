@@ -13,7 +13,6 @@
 	} from "$lib/routes/routes.svelte";
 	import { SETTINGS_SERVICE } from "$lib/settings/appSettings";
 	import { useSettingsModal } from "$lib/settings/settingsModal.svelte";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import {
@@ -34,7 +33,6 @@
 	let contextMenuOpen = $state(false);
 	let shareIssueModal = $state<ShareIssueModal>();
 
-	const userSettings = inject(SETTINGS);
 	const uiState = inject(UI_STATE);
 	const settingsService = inject(SETTINGS_SERVICE);
 	const settingsStore = settingsService.appSettings;
@@ -300,30 +298,21 @@
 			<ContextMenuItem
 				label="Dark"
 				onclick={async () => {
-					userSettings.update((s) => ({
-						...s,
-						theme: "dark",
-					}));
+					uiState.global.theme.set("dark");
 					contextMenuOpen = false;
 				}}
 			/>
 			<ContextMenuItem
 				label="Light"
 				onclick={async () => {
-					userSettings.update((s) => ({
-						...s,
-						theme: "light",
-					}));
+					uiState.global.theme.set("light");
 					contextMenuOpen = false;
 				}}
 			/>
 			<ContextMenuItem
 				label="System"
 				onclick={async () => {
-					userSettings.update((s) => ({
-						...s,
-						theme: "system",
-					}));
+					uiState.global.theme.set("system");
 					contextMenuOpen = false;
 				}}
 			/>

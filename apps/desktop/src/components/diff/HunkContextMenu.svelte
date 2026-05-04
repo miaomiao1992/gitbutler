@@ -19,8 +19,8 @@
 	import { IRC_API_SERVICE } from "$lib/irc/ircApiService";
 	import { vscodePath } from "$lib/project/project";
 	import { PROJECTS_SERVICE } from "$lib/project/projectsService";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { STACK_SERVICE } from "$lib/stacks/stackService.svelte";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { ContextMenu, ContextMenuItem, ContextMenuSection, TestId } from "@gitbutler/ui";
 	import type { TreeChange } from "@gitbutler/but-sdk";
@@ -53,7 +53,8 @@
 	const projectService = inject(PROJECTS_SERVICE);
 	const urlService = inject(URL_SERVICE);
 
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
+	const defaultCodeEditor = uiState.global.defaultCodeEditor;
 
 	const filePath = $derived(change.path);
 	let menuOpen = $state(false);
@@ -160,7 +161,7 @@
 			<ContextMenuSection>
 				<ContextMenuItem
 					testId={TestId.HunkContextMenu_OpenInEditor}
-					label="Open in {$userSettings.defaultCodeEditor.displayName}"
+					label="Open in {defaultCodeEditor.current.displayName}"
 					icon="open-in-ide"
 					onclick={async () => {
 						const project = await projectService.fetchProject(projectId);
@@ -169,7 +170,7 @@
 							const lineNumber =
 								item.beforeLineNumber ?? item.afterLineNumber ?? item.hunk.newStart;
 							const path = getEditorUri({
-								schemeId: $userSettings.defaultCodeEditor.schemeIdentifer,
+								schemeId: defaultCodeEditor.current.schemeIdentifer,
 								path: [vscodePath(project.path), filePath],
 								line: lineNumber,
 							});

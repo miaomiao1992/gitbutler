@@ -13,8 +13,8 @@
 	import { vscodePath } from "$lib/project/project";
 	import { PROJECTS_SERVICE } from "$lib/project/projectsService";
 	import { createCommitSelection } from "$lib/selection/key";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { STACK_SERVICE } from "$lib/stacks/stackService.svelte";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { useUserAvatarUrl } from "$lib/user/userAvatar.svelte";
 	import { inject } from "@gitbutler/core/context";
 
@@ -37,7 +37,7 @@
 
 	const stackService = inject(STACK_SERVICE);
 	const modeService = inject(MODE_SERVICE);
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 	const urlService = inject(URL_SERVICE);
 	const fileService = inject(FILE_SERVICE);
 
@@ -173,7 +173,7 @@
 	async function openAllConflictedFiles(projectPath: string) {
 		for (const file of conflictedFiles) {
 			const path = getEditorUri({
-				schemeId: $userSettings.defaultCodeEditor.schemeIdentifer,
+				schemeId: uiState.global.defaultCodeEditor.current.schemeIdentifer,
 				path: [vscodePath(projectPath), file.path],
 			});
 			urlService.openExternalUrl(path);
@@ -274,7 +274,7 @@
 							{#each files as file (file.path)}
 								<EditModeFileListItem
 									filePath={file.path}
-									pathFirst={$userSettings.pathFirst}
+									pathFirst={uiState.global.pathFirst.current}
 									fileStatus={file.status}
 									conflictHint={file.conflictHint}
 									conflictEntryPresence={file.conflictEntryPresence}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { SETTINGS } from "$lib/settings/userSettings";
+	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { Scrollbar } from "@gitbutler/ui";
 
@@ -26,7 +26,7 @@
 		onscroll,
 	}: Props = $props();
 
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 
 	let scrollbar = $state<Scrollbar>();
 
@@ -44,5 +44,5 @@
 	{zIndex}
 	{onthumbdrag}
 	{onscroll}
-	whenToShow={$userSettings.scrollbarVisibilityState}
+	whenToShow={uiState.global.scrollbarVisibilityState.current}
 />

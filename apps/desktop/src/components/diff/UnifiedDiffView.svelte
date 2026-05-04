@@ -16,7 +16,6 @@
 	import { type SelectionId } from "$lib/selection/key";
 	import { UNCOMMITTED_SERVICE } from "$lib/selection/uncommittedService.svelte";
 	import { SETTINGS_SERVICE } from "$lib/settings/appSettings";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { UI_STATE } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { isImageFile } from "@gitbutler/shared/utils/file";
@@ -83,8 +82,6 @@
 			? dependencyService.fileDependencies(projectId, change.path, stackId)
 			: undefined,
 	);
-
-	const userSettings = inject(SETTINGS);
 
 	const assignments = $derived(uncommittedService.assignmentsByPath(stackId || null, change.path));
 
@@ -233,7 +230,7 @@
 		class:top-padding={topPadding}
 		bind:this={viewport}
 	>
-		{#if $userSettings.svgAsImage && change.path.toLowerCase().endsWith(".svg")}
+		{#if uiState.global.svgAsImage.current && change.path.toLowerCase().endsWith(".svg")}
 			<ImageDiff {projectId} {change} {commitId} />
 		{:else if diff === null}
 			<div class="hunk-placehoder">
@@ -284,14 +281,16 @@
 							staged={selection.current.selected}
 							stagedLines={selection.current.lines}
 							{lineLocks}
-							diffLigatures={$userSettings.diffLigatures}
-							tabSize={$userSettings.tabSize}
-							wrapText={$userSettings.wrapText}
-							diffFont={$userSettings.diffFont}
-							strongContrast={$userSettings.strongContrast}
-							colorBlindFriendly={$userSettings.colorBlindFriendly}
-							inlineUnifiedDiffs={$userSettings.inlineUnifiedDiffs}
 							selectable={isUncommittedChange}
+							{...uiState.pick(
+								"diffLigatures",
+								"tabSize",
+								"wrapText",
+								"diffFont",
+								"strongContrast",
+								"colorBlindFriendly",
+								"inlineUnifiedDiffs",
+							)}
 							onLineClick={(p) => {
 								if (!canBePartiallySelected(diff.subject)) {
 									uncommittedService.checkHunk(stackId || null, change.path, hunk);

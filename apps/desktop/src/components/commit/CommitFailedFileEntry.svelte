@@ -1,9 +1,8 @@
 <script lang="ts">
 	import ReduxResult from "$components/shared/ReduxResult.svelte";
 	import { DEPENDENCY_SERVICE } from "$lib/dependencies/dependencyService.svelte";
-	import { SETTINGS } from "$lib/settings/userSettings";
 	import { STACK_SERVICE } from "$lib/stacks/stackService.svelte";
-	import { type RejectionReason } from "$lib/state/uiState.svelte";
+	import { UI_STATE, type RejectionReason } from "$lib/state/uiState.svelte";
 	import { inject } from "@gitbutler/core/context";
 	import { FileName, HunkDiff, Icon, Tooltip } from "@gitbutler/ui";
 
@@ -16,7 +15,7 @@
 	const { path, reason, projectId }: Props = $props();
 
 	const stackService = inject(STACK_SERVICE);
-	const userSettings = inject(SETTINGS);
+	const uiState = inject(UI_STATE);
 	const dependencyService = inject(DEPENDENCY_SERVICE);
 
 	let isFolded = $state(true);
@@ -58,16 +57,18 @@
 					{#snippet children(fileDependencies)}
 						{#each fileDependencies.dependencies as dependency, i}
 							<HunkDiff
-								filePath="test.tsx"
-								tabSize={$userSettings.tabSize}
-								wrapText={$userSettings.wrapText}
-								diffFont={$userSettings.diffFont}
-								diffLigatures={$userSettings.diffLigatures}
-								strongContrast={$userSettings.strongContrast}
-								colorBlindFriendly={$userSettings.colorBlindFriendly}
-								inlineUnifiedDiffs={$userSettings.inlineUnifiedDiffs}
-								hunkStr={dependency.hunk.diff}
 								draggingDisabled
+								filePath="test.tsx"
+								hunkStr={dependency.hunk.diff}
+								{...uiState.pick(
+									"tabSize",
+									"wrapText",
+									"diffFont",
+									"diffLigatures",
+									"strongContrast",
+									"colorBlindFriendly",
+									"inlineUnifiedDiffs",
+								)}
 							/>
 
 							<div class="text-12 commit-failed__file-entry__dependency-locks">
