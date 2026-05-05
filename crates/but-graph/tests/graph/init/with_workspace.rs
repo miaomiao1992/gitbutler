@@ -236,8 +236,6 @@ fn no_overzealous_stacks_due_to_workspace_metadata() -> anyhow::Result<()> {
         │   ├── ·835086d (🏘️) ►four, ►three
         │   └── ·ff310d3 (🏘️)
         └── 📙:2:feat-2
-            ├── ·a821094 (🏘️|✓) ►main, ►one, ►remote, ►two
-            └── ·bce0c5e (🏘️|✓)
     ");
 
     Ok(())
@@ -528,7 +526,7 @@ fn single_stack_ws_insertions() -> anyhow::Result<()> {
     └── ►:6[0]:origin/B →:4:
         └── →:7: (A-empty-03)
     ");
-    insta::assert_snapshot!(graph_workspace(&graph.into_workspace()?), @r"
+    insta::assert_snapshot!(graph_workspace(&graph.into_workspace()?), @"
     📕🏘️:0:gitbutler/workspace[🌳] <> ✓refs/remotes/origin/main on fafd9d0
     └── ≡📙:4:B <> origin/B →:6:⇡2 on fafd9d0 {0}
         ├── 📙:4:B <> origin/B →:6:⇡2
@@ -536,9 +534,6 @@ fn single_stack_ws_insertions() -> anyhow::Result<()> {
         │   └── ·320e105 (🏘️) ►tags/without-ref
         ├── 📙:3:B-empty
         │   └── ·2a31450 (🏘️) ►ambiguous-01
-        ├── 📙:7:A-empty-03
-        ├── 📙:8:A-empty-02
-        ├── 📙:9:A-empty-01
         └── 📙:10:A
             └── ❄70bde6b (🏘️)
     ");
@@ -570,7 +565,7 @@ fn single_stack_ws_insertions() -> anyhow::Result<()> {
     └── ►:6[0]:origin/B →:5:
         └── →:7: (A)
     ");
-    insta::assert_snapshot!(graph_workspace(&graph.into_workspace()?), @r"
+    insta::assert_snapshot!(graph_workspace(&graph.into_workspace()?), @"
     📕🏘️:1:gitbutler/workspace[🌳] <> ✓refs/remotes/origin/main on fafd9d0
     └── ≡📙:5:B <> origin/B →:6:⇡2 on fafd9d0 {1}
         ├── 📙:5:B <> origin/B →:6:⇡2
@@ -578,7 +573,6 @@ fn single_stack_ws_insertions() -> anyhow::Result<()> {
         │   └── ·320e105 (🏘️) ►tags/without-ref
         ├── 📙:4:B-empty
         │   └── ·2a31450 (🏘️) ►ambiguous-01
-        ├── 📙:7:A
         └── 👉📙:8:A-empty-01
             └── ❄70bde6b (🏘️) ►A-empty-02, ►A-empty-03
     ");
@@ -603,7 +597,6 @@ fn single_stack_ws_insertions() -> anyhow::Result<()> {
         │   └── ·320e105 (🏘️) ►tags/without-ref
         ├── 📙:4:B-empty
         │   └── ·2a31450 (🏘️) ►ambiguous-01
-        ├── 📙:9:A
         └── 📙:10:A-empty-01
             └── ❄70bde6b (🏘️) ►A-empty-02, ►A-empty-03
     ");
@@ -1366,14 +1359,13 @@ fn two_stacks_many_refs() -> anyhow::Result<()> {
         └── →:2: (main →:1:)
     ");
 
-    insta::assert_snapshot!(graph_workspace(&graph.into_workspace()?), @r"
+    insta::assert_snapshot!(graph_workspace(&graph.into_workspace()?), @"
     📕🏘️:0:gitbutler/workspace[🌳] <> ✓refs/remotes/origin/main on fafd9d0
     ├── ≡📙:8:S1 on fafd9d0 {3}
     │   ├── 📙:8:S1
     │   ├── 📙:9:G
     │   ├── 📙:10:F
     │   │   └── ·16f132b (🏘️)
-    │   ├── 📙:11:D
     │   └── 📙:12:E
     │       └── ·917b9da (🏘️)
     ├── ≡📙:7:A on fafd9d0 {2}
@@ -1407,14 +1399,13 @@ fn two_stacks_many_refs() -> anyhow::Result<()> {
     └── ►:2[0]:origin/main →:3:
         └── →:3: (main →:2:)
     ");
-    insta::assert_snapshot!(graph_workspace(&graph.into_workspace()?), @r"
+    insta::assert_snapshot!(graph_workspace(&graph.into_workspace()?), @"
     📕🏘️:1:gitbutler/workspace[🌳] <> ✓refs/remotes/origin/main on fafd9d0
     ├── ≡👉📙:8:S1 on fafd9d0 {3}
     │   ├── 👉📙:8:S1
     │   ├── 📙:9:G
     │   ├── 📙:10:F
     │   │   └── ·16f132b (🏘️)
-    │   ├── 📙:11:D
     │   └── 📙:12:E
     │       └── ·917b9da (🏘️)
     ├── ≡📙:7:A on fafd9d0 {2}
@@ -5526,8 +5517,7 @@ fn applied_stack_below_explicit_lower_bound() -> anyhow::Result<()> {
     📕🏘️:0:gitbutler/workspace[🌳] <> ✓refs/remotes/origin/main⇣1 on bce0c5e
     ├── ≡📙:4:B on bce0c5e {1}
     │   └── 📙:4:B
-    │       ├── ·78b1b59 (🏘️)
-    │       └── ·f52fcec (🏘️|✓)
+    │       └── ·78b1b59 (🏘️)
     └── ≡📙:3:A on bce0c5e {0}
         └── 📙:3:A
             └── ·6fdab32 (🏘️)
@@ -6543,8 +6533,7 @@ fn integrated_merge_at_bottom_is_kept() -> anyhow::Result<()> {
         └── 📙:3:local-stack
             ├── ·66ea651 (🏘️)
             ├── ·e5a88a7 (🏘️)
-            ├── ·0b3ccaf (🏘️)
-            └── ·fafd9d0 (🏘️|✓)
+            └── ·0b3ccaf (🏘️)
     ");
 
     Ok(())
@@ -6598,8 +6587,7 @@ fn merge_from_main_keeps_all_branch_commits() -> anyhow::Result<()> {
         └── 📙:3:my-branch
             ├── ·cd76046 (🏘️)
             ├── ·f8ff9a3 (🏘️)
-            ├── ·6f65768 (🏘️)
-            └── ·fafd9d0 (🏘️|✓)
+            └── ·6f65768 (🏘️)
     ");
 
     Ok(())

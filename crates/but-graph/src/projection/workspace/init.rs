@@ -760,19 +760,12 @@ impl WorkspaceState {
     ///
     /// The fork point is the first commit on the first-parent chain (walked via
     /// the graph's `CommitFlags::Integrated`) that is reachable from the target.
-    ///
-    /// Stacks explicitly tracked in workspace metadata are never pruned —
-    /// their integrated branches and commits must remain visible so that
-    /// `integrate_upstream` can detect and remove them.
     fn prune_integrated_segments(&mut self, graph: &Graph) {
         if self.extra_target.is_some() || self.target_ref.is_none() {
             return;
         }
         let metadata = self.metadata.as_ref();
         for stack in &mut self.stacks {
-            if is_metadata_tracked(stack, metadata) {
-                continue;
-            }
             truncate_at_fork_point(stack, graph);
             remove_empty_branches(stack, metadata);
         }
@@ -967,52 +960,56 @@ impl WorkspaceState {
     }
 }
 
-/// Truncate the stack at the fork point: the first commit whose graph-level
-/// `CommitFlags::Integrated` flag is set, walking top-down through each
-/// segment's `commits_by_segment` entries.
+/// Truncate the stack at the fork point by removing the contiguous tail of
+/// integrated commits at the bottom. Integrated commits *above* the fork
+/// point (e.g. cherry-picked or merged upstream) are kept.
 ///
-/// If the very first commit is already integrated, the entire stack is
-/// integrated and we leave it untouched — pruning is only for partially
-/// integrated stacks where the bottom portion has been merged upstream.
+/// If every commit is integrated, the stack is left untouched.
 fn truncate_at_fork_point(stack: &mut Stack, graph: &Graph) {
-    let mut is_first = true;
+    // Collect the integrated status for every commit, walking top-down
+    // through segments. Each entry is (seg_idx, offset-in-segment, integrated).
+    let mut entries: Vec<(usize, usize, bool)> = Vec::new();
     for seg_idx in 0..stack.segments.len() {
         let seg = &stack.segments[seg_idx];
         for &(graph_sidx, ofs) in &seg.commits_by_segment {
             for (i, commit) in graph[graph_sidx].commits.iter().enumerate() {
-                if commit.flags.contains(CommitFlags::Integrated) {
-                    if is_first {
-                        // Fully integrated — leave the stack as-is.
-                        return;
-                    }
-                    let cut = ofs + i;
-                    stack.segments[seg_idx].commits.truncate(cut);
-                    stack.segments[seg_idx]
-                        .commits_by_segment
-                        .retain(|(_, o)| *o < cut);
-                    // Clear commits in all segments below the cutoff, but keep
-                    // the segments themselves so that `remove_empty_branches`
-                    // can decide whether to retain metadata-tracked branches.
-                    for seg in &mut stack.segments[seg_idx + 1..] {
-                        seg.commits.clear();
-                        seg.commits_by_segment.clear();
-                    }
-                    return;
-                }
-                is_first = false;
+                entries.push((
+                    seg_idx,
+                    ofs + i,
+                    commit.flags.contains(CommitFlags::Integrated),
+                ));
             }
         }
     }
-}
 
-/// Returns `true` if the stack is explicitly tracked in workspace metadata.
-fn is_metadata_tracked(
-    stack: &Stack,
-    metadata: Option<&but_core::ref_metadata::Workspace>,
-) -> bool {
-    stack.id.is_some_and(|stack_id| {
-        metadata.is_some_and(|meta| meta.stacks(Applied).any(|ms| ms.id == stack_id))
-    })
+    if entries.is_empty() {
+        return;
+    }
+
+    // Find the fork point: walk from the bottom and find where the
+    // contiguous integrated tail begins.
+    let mut fork = entries.len();
+    for (idx, &(_, _, integrated)) in entries.iter().enumerate().rev() {
+        if integrated {
+            fork = idx;
+        } else {
+            break;
+        }
+    }
+
+    // Nothing to prune (no integrated tail, or everything is integrated).
+    if fork == entries.len() || fork == 0 {
+        return;
+    }
+
+    let (cut_seg_idx, cut_offset, _) = entries[fork];
+    stack.segments[cut_seg_idx].commits.truncate(cut_offset);
+    stack.segments[cut_seg_idx]
+        .commits_by_segment
+        .retain(|(_, o)| *o < cut_offset);
+    // Remove all segments below the cutoff — branches beyond the fork
+    // point are fully integrated and should not remain visible.
+    stack.segments.truncate(cut_seg_idx + 1);
 }
 
 fn remove_empty_branches(stack: &mut Stack, metadata: Option<&but_core::ref_metadata::Workspace>) {

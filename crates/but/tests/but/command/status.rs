@@ -725,10 +725,6 @@ fn status_upstream_prunes_with_different_bases() -> anyhow::Result<()> {
 ┊
 ┊╭┄h0 [B] [✓ upstream merges cleanly]
 ┊●   594a02c B-change
-┊│
-┊├┄ma [main] [⬆ integrated upstream]
-┊●   ba5149e M2
-┊●   6daac93 M1
 ├╯
 ┊
 ┊╭┄(upstream) ⏫ 2 new commits
