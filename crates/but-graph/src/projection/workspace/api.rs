@@ -151,6 +151,54 @@ impl Workspace {
         }
     }
 
+    /// Return the newest (highest) merge base among all stacks and the target branch.
+    ///
+    /// Unlike [`Self::lower_bound`] which returns the *lowest* common ancestor of all stacks,
+    /// this returns the merge base of whichever stack is closest to the target tip.
+    /// This is useful for creating new independent branches at a recent base rather than
+    /// an arbitrarily old one.
+    ///
+    /// Returns `None` if there is no target ref, no stacks, or no merge base could be found.
+    pub fn newest_base_among_stacks(&self) -> Option<gix::ObjectId> {
+        let target_sidx = self
+            .target_ref
+            .as_ref()
+            .map(|t| t.segment_index)
+            .or(self.target_commit.as_ref().map(|t| t.segment_index))
+            .or(self.extra_target)?;
+
+        let mut best: Option<(gix::ObjectId, SegmentIndex)> = None;
+        for stack in &self.stacks {
+            let Some(top_seg) = stack.segments.first() else {
+                continue;
+            };
+            let Some(merge_base_sidx) = self.graph.find_git_merge_base(top_seg.id, target_sidx)
+            else {
+                continue;
+            };
+            let Some(merge_base_commit) = self.graph.tip_skip_empty(merge_base_sidx) else {
+                continue;
+            };
+            match best {
+                None => {
+                    best = Some((merge_base_commit.id, merge_base_sidx));
+                }
+                Some((_, prev_sidx)) => {
+                    // If the previous best is an ancestor of this one, this one is newer.
+                    if self
+                        .graph
+                        .find_git_merge_base(prev_sidx, merge_base_sidx)
+                        .is_some_and(|common| common == prev_sidx)
+                    {
+                        // prev is ancestor of current → current is newer
+                        best = Some((merge_base_commit.id, merge_base_sidx));
+                    }
+                }
+            }
+        }
+        best.map(|(id, _)| id)
+    }
+
     /// Return the `(merge-base, target-commit-id)` of the merge-base between the `commit_to_merge`
     /// and either the [target-branch](Self::target_ref), the [extra-target](Self::extra_target)
     /// or the [target-commit](Self::target_commit), depending on which is set and encountered

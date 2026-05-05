@@ -192,12 +192,15 @@ pub(super) mod function {
                             instruction,
                         )
                     } else {
-                        let base = ws_base.with_context(|| {
-                            format!(
-                                "workspace at {} is missing a base",
-                                workspace.ref_name_display()
-                            )
-                        })?;
+                        let base = workspace
+                            .newest_base_among_stacks()
+                            .or(ws_base)
+                            .with_context(|| {
+                                format!(
+                                    "workspace at {} is missing a base",
+                                    workspace.ref_name_display()
+                                )
+                            })?;
                         (
                             // do not validate, as the base is expectedly outside of workspace
                             false,
